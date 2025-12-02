@@ -6,7 +6,7 @@ module day_1();
     
     integer i;
     integer rotation_amount;
-    integer remaining_rotation;
+    integer new_position;
 
     initial begin
         $readmemh("input.mem", ops);
@@ -15,19 +15,14 @@ module day_1();
             rotation_amount = ops[i][9:0];
             
             if(ops[i][10] == 1'b1) begin  
-                counter = counter + (dial_position + rotation_amount) / 100;
-                if(dial_position + rotation_amount >= 100) begin
-                    dial_position = (dial_position + rotation_amount) % 100;
-                end else begin
-                    dial_position = dial_position + rotation_amount;
-                end
+                new_position = dial_position + rotation_amount;
+                counter = counter + new_position / 100;
+                dial_position = new_position % 100;
             end else begin  
                 counter = counter + rotation_amount / 100;
-                remaining_rotation = rotation_amount % 100;
-                if(dial_position <= remaining_rotation && dial_position != 0) begin
-                    counter = counter + 1;
-                end
-                dial_position = (100 + dial_position - remaining_rotation) % 100;
+                rotation_amount = rotation_amount % 100;
+                counter = counter + (dial_position > 0 && dial_position <= rotation_amount);
+                dial_position = (100 + dial_position - rotation_amount) % 100;
 
             end
         end

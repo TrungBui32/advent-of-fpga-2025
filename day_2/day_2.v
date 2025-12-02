@@ -7,10 +7,9 @@ module day_2(
 );
     localparam IDLE = 3'b000;
     localparam LOAD = 3'b001;
-    localparam EXTRACT_DIGITS = 3'b010;
-    localparam CHECK_PATTERN = 3'b011;
-    localparam NEXT_NUM = 3'b100;
-    localparam DONE = 3'b101;
+    localparam CHECK_PATTERN = 3'b010;
+    localparam NEXT_NUM = 3'b011;
+    localparam DONE = 3'b100;
         
     localparam LENGTH = 34;
 
@@ -27,18 +26,29 @@ module day_2(
     reg [63:0] temp_num;
     reg [3:0] digits [0:19]; 
     reg [4:0] digit_count;
-    reg [4:0] half_count;
-    reg [4:0] check_idx;
+    reg [4:0] pattern_len;
+    reg [4:0] repeat_count;
+    reg [4:0] i, j;
     reg pattern_match;
-    integer j;
+    reg pattern_found;
 
     initial begin
         $readmemb("table_1.mem", table_1);
         $readmemb("table_2.mem", table_2);
-        for(j = 0; j < 20; j = j + 1) begin
-            digits[j] = 0;
-        end
     end
+
+    function [4:0] count_digits;
+        input [63:0] num;
+        reg [63:0] temp;
+        begin
+            count_digits = 0;
+            temp = num;
+            while (temp > 0) begin
+                count_digits = count_digits + 1;
+                temp = temp / 10;
+            end
+        end
+    endfunction
 
     always @(posedge clk) begin
         if(rst) begin
@@ -69,47 +79,42 @@ module day_2(
                 end
                 
                 CHECK_PATTERN: begin
-                    if(search_val >= 10 && search_val <= 99) begin
-                        if(search_val / 10 == search_val % 10) begin
-                            accumulator <= accumulator + search_val;
-                        end
-                    end else if (search_val >= 1000 && search_val <= 9999) begin 
-                        if(search_val / 100 == search_val % 100) begin 
-                            accumulator <= accumulator + search_val;
-                        end 
-                    end else if (search_val >= 100000 && search_val <= 999999) begin 
-                        if(search_val / 1000 == search_val % 1000) begin 
-                            accumulator <= accumulator + search_val;
-                        end 
-                    end else if (search_val >= 10000000 && search_val <= 99999999) begin 
-                        if(search_val / 10000 == search_val % 10000) begin 
-                            accumulator <= accumulator + search_val;
-                        end 
-                    end else if (search_val >= 1000000000 && search_val <= 9999999999) begin 
-                        if(search_val / 100000 == search_val % 100000) begin 
-                            accumulator <= accumulator + search_val;
-                        end 
-                    end else if (search_val >= 100000000000 && search_val <= 999999999999) begin 
-                        if(search_val / 1000000 == search_val % 1000000) begin 
-                            accumulator <= accumulator + search_val;
-                        end
-                    end else if (search_val >= 10000000000000 && search_val <= 99999999999999) begin 
-                        if(search_val / 10000000 == search_val % 10000000) begin 
-                            accumulator <= accumulator + search_val;
-                        end 
-                    end else if (search_val >= 1000000000000000 && search_val <= 9999999999999999) begin 
-                        if(search_val / 100000000 == search_val % 100000000) begin 
-                            accumulator <= accumulator + search_val;
-                        end 
-                    end else if (search_val >= 100000000000000000 && search_val <= 999999999999999999) begin 
-                        if(search_val / 1000000000 == search_val % 1000000000) begin 
-                            accumulator <= accumulator + search_val;
-                        end
-                    end else if (search_val >= 10000000000000000000 && search_val <= 18446744073709551615) begin 
-                        if(search_val / 10000000000 == search_val % 10000000000) begin 
-                            accumulator <= accumulator + search_val;
+                    temp_num = search_val;
+                    digit_count = count_digits(search_val);
+                    
+                    for(i = 0; i < digit_count; i = i + 1) begin
+                        digits[i] = temp_num % 10;
+                        temp_num = temp_num / 10;
+                    end
+                    
+                    pattern_found = 1'b0;
+                    
+                    for(pattern_len = 1; pattern_len <= digit_count/2 && !pattern_found; pattern_len = pattern_len + 1) begin
+                        if(digit_count % pattern_len == 0) begin
+                            repeat_count = digit_count / pattern_len;
+                            
+                            if(repeat_count >= 2) begin
+                                pattern_match = 1'b1;
+                                
+                                for(i = 0; i < pattern_len && pattern_match; i = i + 1) begin
+                                    for(j = 1; j < repeat_count && pattern_match; j = j + 1) begin
+                                        if(digits[i] != digits[i + j * pattern_len]) begin
+                                            pattern_match = 1'b0;
+                                        end
+                                    end
+                                end
+                                
+                                if(pattern_match) begin
+                                    pattern_found = 1'b1;
+                                end
+                            end
                         end
                     end
+                    
+                    if(pattern_found) begin
+                        accumulator <= accumulator + search_val;
+                    end
+                    
                     state <= NEXT_NUM;
                 end
                 

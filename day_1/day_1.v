@@ -15,8 +15,8 @@ module day_1();
             rotation_amount = ops[i][9:0];
             
             if(ops[i][10] == 1'b1) begin  
+                counter = counter + (dial_position + rotation_amount) / 100;
                 if(dial_position + rotation_amount >= 100) begin
-                    counter = counter + (dial_position + rotation_amount) / 100;
                     dial_position = (dial_position + rotation_amount) % 100;
                 end else begin
                     dial_position = dial_position + rotation_amount;
@@ -24,17 +24,13 @@ module day_1();
             end else begin  
                 counter = counter + rotation_amount / 100;
                 remaining_rotation = rotation_amount % 100;
-                if(dial_position != 0) begin
-                    if(dial_position <= remaining_rotation) begin
-                        counter = counter + 1;
-                        dial_position = (100 + (dial_position - remaining_rotation)) % 100;
-                    end else begin
-                        dial_position = dial_position - remaining_rotation;
-                    end
-                end else begin
-                    dial_position = 100 - remaining_rotation;
+                if(dial_position <= remaining_rotation && dial_position != 0) begin
+                    counter = counter + 1;
                 end
+                dial_position = (100 + dial_position - remaining_rotation) % 100;
+
             end
         end
+        $display("Final Counter Value: %d", counter);
     end
 endmodule

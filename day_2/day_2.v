@@ -5,13 +5,14 @@ module day_2(
     output reg finished,
     output reg [63:0] result
 );
-    localparam IDLE = 3'b000;
-    localparam LOAD = 3'b001;
-    localparam CHECK_PATTERN = 3'b010;
-    localparam NEXT_NUM = 3'b011;
-    localparam DONE = 3'b100;
+    localparam IDLE = 3'd0;
+    localparam LOAD = 3'd1;
+    localparam CHECK_PATTERN = 3'd2;
+    localparam NEXT_NUM = 3'd3;
+    localparam DONE = 3'd4;
         
     localparam LENGTH = 34;
+    localparam MAX_PATTERN_LEN = 10;
 
     reg [2:0] state;
     reg [63:0] table_1 [0:LENGTH-1]; 
@@ -23,32 +24,88 @@ module day_2(
     reg [63:0] val_1;
     reg [63:0] val_2;
     
-    reg [63:0] temp_num;
     reg [3:0] digits [0:19]; 
     reg [4:0] digit_count;
-    reg [4:0] pattern_len;
-    reg [4:0] repeat_count;
-    reg [4:0] i, j;
-    reg pattern_match;
-    reg pattern_found;
+    
+    reg [63:0] check_val;
+    reg check_valid;
+    
+    wire [MAX_PATTERN_LEN-1:0] pattern_matches;
+    wire any_pattern_found;
 
     initial begin
         $readmemb("table_1.mem", table_1);
         $readmemb("table_2.mem", table_2);
     end
 
-    function [4:0] count_digits;
-        input [63:0] num;
-        reg [63:0] temp;
-        begin
-            count_digits = 0;
-            temp = num;
-            while (temp > 0) begin
-                count_digits = count_digits + 1;
-                temp = temp / 10;
-            end
+    wire [3:0] current_digits [0:19];
+    genvar k;
+    generate
+        for(k = 0; k < 20; k = k + 1) begin : digit_extract_comb
+            assign current_digits[k] = (search_val / (10 ** k)) % 10;
         end
-    endfunction
+    endgenerate
+
+    always @(posedge clk) begin
+        if(state == CHECK_PATTERN && !check_valid) begin 
+            for(integer i = 0; i < 20; i = i + 1) begin
+                digits[i] <= current_digits[i];
+            end
+            check_val <= search_val;
+            check_valid <= 1'b1;
+        end else if(state != CHECK_PATTERN) begin
+            check_valid <= 1'b0;
+        end
+    end
+
+    generate
+        for(k = 1; k <= MAX_PATTERN_LEN; k = k + 1) begin : pattern_check
+            reg match;
+            integer i, j;
+            
+            always @(*) begin
+                match = 1'b0;
+                if(check_valid && digit_count >= 2*k && digit_count % k == 0) begin
+                    match = 1'b1;
+                    for(i = 0; i < k && match; i = i + 1) begin
+                        for(j = 1; j < digit_count/k && match; j = j + 1) begin
+                            if(digits[i] != digits[i + j*k]) begin
+                                match = 1'b0;
+                            end
+                        end
+                    end
+                end
+            end
+            
+            assign pattern_matches[k-1] = match;
+        end
+    endgenerate
+    
+    assign any_pattern_found = |pattern_matches;
+
+    always @(*) begin
+        digit_count = 0;
+        if(check_val >= 64'd10000000000000000000) digit_count = 20;
+        else if(check_val >= 64'd1000000000000000000) digit_count = 19;
+        else if(check_val >= 64'd100000000000000000) digit_count = 18;
+        else if(check_val >= 64'd10000000000000000) digit_count = 17;
+        else if(check_val >= 64'd1000000000000000) digit_count = 16;
+        else if(check_val >= 64'd100000000000000) digit_count = 15;
+        else if(check_val >= 64'd10000000000000) digit_count = 14;
+        else if(check_val >= 64'd1000000000000) digit_count = 13;
+        else if(check_val >= 64'd100000000000) digit_count = 12;
+        else if(check_val >= 64'd10000000000) digit_count = 11;
+        else if(check_val >= 64'd1000000000) digit_count = 10;
+        else if(check_val >= 64'd100000000) digit_count = 9;
+        else if(check_val >= 64'd10000000) digit_count = 8;
+        else if(check_val >= 64'd1000000) digit_count = 7;
+        else if(check_val >= 64'd100000) digit_count = 6;
+        else if(check_val >= 64'd10000) digit_count = 5;
+        else if(check_val >= 64'd1000) digit_count = 4;
+        else if(check_val >= 64'd100) digit_count = 3;
+        else if(check_val >= 64'd10) digit_count = 2;
+        else if(check_val >= 64'd1) digit_count = 1;
+    end
 
     always @(posedge clk) begin
         if(rst) begin
@@ -56,6 +113,7 @@ module day_2(
             finished <= 1'b0;
             accumulator <= 64'b0;
             range_idx <= 6'b0;
+            check_valid <= 1'b0;
         end else begin
             case(state)
                 IDLE: begin
@@ -79,45 +137,15 @@ module day_2(
                 end
                 
                 CHECK_PATTERN: begin
-                    temp_num = search_val;
-                    digit_count = count_digits(search_val);
-                    
-                    for(i = 0; i < digit_count; i = i + 1) begin
-                        digits[i] = temp_num % 10;
-                        temp_num = temp_num / 10;
+                    if(check_valid && any_pattern_found) begin
+                        accumulator <= accumulator + check_val;
                     end
                     
-                    pattern_found = 1'b0;
-                    
-                    for(pattern_len = 1; pattern_len <= digit_count/2 && !pattern_found; pattern_len = pattern_len + 1) begin
-                        if(digit_count % pattern_len == 0) begin
-                            repeat_count = digit_count / pattern_len;
-                            
-                            if(repeat_count >= 2) begin
-                                pattern_match = 1'b1;
-                                
-                                for(i = 0; i < pattern_len && pattern_match; i = i + 1) begin
-                                    for(j = 1; j < repeat_count && pattern_match; j = j + 1) begin
-                                        if(digits[i] != digits[i + j * pattern_len]) begin
-                                            pattern_match = 1'b0;
-                                        end
-                                    end
-                                end
-                                
-                                if(pattern_match) begin
-                                    pattern_found = 1'b1;
-                                end
-                            end
-                        end
+                    if(check_valid) begin
+                        state <= NEXT_NUM;
                     end
-                    
-                    if(pattern_found) begin
-                        accumulator <= accumulator + search_val;
-                    end
-                    
-                    state <= NEXT_NUM;
                 end
-                
+
                 NEXT_NUM: begin
                     if(search_val < val_2) begin
                         search_val <= search_val + 1;

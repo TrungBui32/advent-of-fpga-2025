@@ -49,9 +49,9 @@ module day_3(
             assign highest_array[i] = find_highest(bank[i]);
         end
     endgenerate
-
+    
+    integer j;
     always @(*) begin
-        integer j;
         output_sum = 0;
         for (j = 0; j < HEIGHT; j = j + 1) begin
             output_sum = output_sum + highest_array[j];

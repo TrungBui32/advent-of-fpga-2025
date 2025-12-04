@@ -49,8 +49,8 @@ module find_highest #(
                 end
                 FILL: begin
                     if(i < 12) begin
-                        digit_array[i] <= temp_num % 10;
-                        temp_num <= temp_num / 10;
+                        digit_array[i] <= temp_num[3:0];
+                        temp_num <= temp_num >> 4;
                         i <= i + 1;
                     end else begin 
                         state <= PRE_TRACE;
@@ -59,11 +59,11 @@ module find_highest #(
                 end
                 PRE_TRACE: begin
                     if(temp_num > 0) begin
-                        current_digit <= temp_num % 10;
+                        current_digit <= temp_num[3:0];
                         count <= 4'd11;
                         shift <= 1'b1;
                         state <= TRACE;
-                        temp_num <= temp_num / 10;
+                        temp_num <= temp_num >> 4;
                     end else begin
                         state <= SUM;
                     end
@@ -83,7 +83,7 @@ module find_highest #(
                 end
                 SUM: begin
                     if(i < 12) begin
-                        result <= result * 10 + digit_array[11 - i];
+                        result <= (result << 3) + (result << 1) + digit_array[11 - i];
                         i <= i + 1;
                     end else begin
                         state <= DONE;

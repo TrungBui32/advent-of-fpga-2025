@@ -5,7 +5,7 @@ module day_3(
     output reg finished,
     output reg [47:0] output_sum
 );
-    localparam WIDTH = 333;
+    localparam WIDTH = 400;
     localparam HEIGHT = 200;
 
     localparam IDLE = 2'd0;
@@ -20,7 +20,7 @@ module day_3(
     wire [39:0] highest_array [0:HEIGHT-1];
     
     initial begin
-        $readmemb("input.mem", bank);
+        $readmemh("input.mem", bank);
         finished = 1'b0;
     end
 

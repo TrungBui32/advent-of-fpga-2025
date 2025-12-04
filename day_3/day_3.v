@@ -17,7 +17,7 @@ module day_3(
     reg [1:0] bank_index;
     reg [1:0] state;
 
-    reg [39:0] highest_array [0:HEIGHT-1];
+    wire [39:0] highest_array [0:HEIGHT-1];
     
     initial begin
         $readmemb("input.mem", bank);
@@ -26,7 +26,7 @@ module day_3(
 
     genvar i;
     generate
-        for (i = 0; i < HEIGHT; i = i + 1) begin
+        for (i = 0; i < HEIGHT; i = i + 1) begin: gen_find_highest
             find_highest #(WIDTH) fh (
                 .clk(clk),
                 .rst(rst),

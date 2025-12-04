@@ -1,68 +1,76 @@
 module day_3(
     input clk,
     input rst,
+    input start,
     output reg finished,
-    output reg [14:0] output_sum
+    output reg [47:0] output_sum
 );
     localparam WIDTH = 333;
     localparam HEIGHT = 200;
 
+    localparam IDLE = 2'd0;
+    localparam SUM = 2'd1;
+    localparam DONE = 2'd2;
+
     reg [WIDTH-1:0] bank [0:HEIGHT-1];
-    wire [6:0] highest_array [0:HEIGHT-1];
+    wire [HEIGHT-1:0] fh_finished;
+    reg [1:0] bank_index;
+    reg [1:0] state;
+
+    reg [39:0] highest_array [0:HEIGHT-1];
     
     initial begin
         $readmemb("input.mem", bank);
         finished = 1'b0;
     end
 
-    function [6:0] find_highest;
-        input [WIDTH-1:0] num;
-        reg [3:0] highest;
-        reg [3:0] second_highest;
-        reg [3:0] current_digit;
-        reg [WIDTH-1:0] temp_num;
-        begin
-            second_highest = num % 10;
-            temp_num = num / 10;
-            highest = temp_num % 10;
-            temp_num = temp_num / 10;
-            
-            while(temp_num > 0) begin
-                current_digit = temp_num % 10;
-                
-                if (current_digit >= highest) begin
-                    if(second_highest < highest) begin
-                        second_highest = highest;
-                    end
-                    highest = current_digit;
-                end 
-                temp_num = temp_num / 10;
-            end
-            
-            find_highest = highest * 10 + second_highest;
-        end
-    endfunction
-
     genvar i;
-    generate 
-        for(i = 0; i < HEIGHT; i = i + 1) begin : gen_highest
-            assign highest_array[i] = find_highest(bank[i]);
+    generate
+        for (i = 0; i < HEIGHT; i = i + 1) begin
+            find_highest #(WIDTH) fh (
+                .clk(clk),
+                .rst(rst),
+                .start(start),
+                .num(bank[i]),
+                .finished(fh_finished[i]),
+                .result_1(highest_array[i])
+            );
         end
     endgenerate
-    
-    integer j;
-    always @(*) begin
-        output_sum = 0;
-        for (j = 0; j < HEIGHT; j = j + 1) begin
-            output_sum = output_sum + highest_array[j];
-        end
-    end
+
+    wire all_finished = &fh_finished;
+
+    reg [7:0] j;    // 200
 
     always @(posedge clk or posedge rst) begin
-        if (rst)
+        if (rst) begin
             finished <= 1'b0;
-        else
-            finished <= 1'b1;
+            bank_index <= 0;
+            output_sum <= 48'd0;
+            state <= IDLE;
+            j <= 8'd0;
+        end else begin
+            case (state)
+                IDLE: begin
+                    if(all_finished) begin
+                        state <= SUM;
+                        j <= 0;
+                        output_sum <= 0;
+                    end
+                    finished <= 0;
+                end
+                SUM: begin
+                    if( j < HEIGHT) begin
+                        output_sum <= output_sum + highest_array[j];
+                        j <= j + 1;
+                    end else begin
+                        state <= DONE;
+                    end
+                end
+                DONE: begin
+                    finished <= 1'b1;
+                end
+            endcase
+        end
     end
-
 endmodule

@@ -65,8 +65,7 @@ def convert_input():
     for i in range(4):
         with open(f'line{i+1}.mem', 'w') as f:
             for value in all_values[i]:
-                hex_value = hex(value)[2:]  
-                f.write(f"{hex_value}\n")
+                f.write(f"{value}\n")
         print(f"Created line{i+1}.mem with {len(all_values[i])} elements")
     
     with open('op.mem', 'w') as f:

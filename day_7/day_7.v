@@ -3,7 +3,7 @@ module day_7(
     input rst,
     input start,
     output reg finished,
-    output reg [31:0] result
+    output reg [63:0] result
 );
     localparam HEIGHT = 141;
     localparam WIDTH = 141;
@@ -11,12 +11,13 @@ module day_7(
 
     localparam IDLE = 3'd0;
     localparam RUNNING = 3'd1;
-    localparam DONE = 3'd2;
+    localparam SUMMING = 3'd2;
+    localparam DONE = 3'd3;
 
     reg [WIDTH-1:0] map [0:HEIGHT-1];
-    reg [WIDTH-1:0] path [0:HEIGHT-1];
+    reg [63:0] path [0:HEIGHT-1][0:WIDTH-1];
 
-    reg [31:0] sum;
+    reg [63:0] sum;
     
     integer i, j;
     initial begin
@@ -54,23 +55,28 @@ module day_7(
                 end
                 RUNNING: begin
                     for(x = 0; x < WIDTH; x = x + 1) begin
-                        if(path[y-1][x] == 1 && map[y][x] == 1) begin
+                        if(path[y-1][x] > 0 && map[y][x] == 1) begin
                             if(x > 0) begin
-                                path[y][x-1] <= 1;
+                                path[y][x-1] = path[y][x-1] + path[y-1][x];
                             end
                             if(x + 1 < WIDTH) begin
-                                path[y][x+1] <= 1;
+                                path[y][x+1] = path[y][x+1] + path[y-1][x];
                             end
-                            sum = sum + 1;
-                        end  else if (path[y-1][x] == 1) begin
-                            path[y][x] <= 1;
+                        end  else if (path[y-1][x] > 0) begin
+                            path[y][x] = path[y][x] + path[y-1][x];
                         end
                     end
                     if(y == HEIGHT - 1) begin
-                        state <= DONE;
+                        state <= SUMMING;
                     end else begin
                         y <= y + 1;
                     end
+                end
+                SUMMING: begin
+                    for(x = 0; x < WIDTH; x = x + 1) begin
+                        sum = sum + path[HEIGHT-1][x];
+                    end 
+                    state <= DONE;
                 end
                 DONE: begin
                     finished <= 1;

@@ -101,7 +101,6 @@ module day_6 (
                     end else begin
                         temp_values[3] = temp_values_1[3];
                     end
-                    $display("Idx: %d, Values: %d, %d, %d, %d, Op: %b", idx, temp_values[0], temp_values[1], temp_values[2], temp_values[3], op[idx]);
                     state <= CALC;
                 end
                 CALC: begin
@@ -120,7 +119,6 @@ module day_6 (
                         idx <= idx + 1;
                         state <= EXTRACT;
                     end
-                    $display("Idx: %d, Result: %d", idx, result_array[idx]);
                 end
                 SUM: begin
                     sum_accumulator <= sum_accumulator + result_array[idx];

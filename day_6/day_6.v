@@ -8,7 +8,7 @@ module day_6 (
     localparam DATA_WIDTH = 16;
     localparam NUM_ELEMENTS = 1000;  
     localparam RESULT_WIDTH = 64;
-    localparam PARALLEL = 8;  
+    localparam PARALLEL = 25;  
     
     reg [DATA_WIDTH-1:0] line1 [0:NUM_ELEMENTS-1];
     reg [DATA_WIDTH-1:0] line2 [0:NUM_ELEMENTS-1];
@@ -87,6 +87,16 @@ module day_6 (
         end
     endgenerate
 
+    reg [63:0] parallel_sum;
+
+    integer j;
+    always @(*) begin
+        parallel_sum = 0;
+        for (j = 0; j < PARALLEL; j = j + 1) begin
+            parallel_sum = parallel_sum + saved_temp[j*2];
+        end
+    end
+
     integer i;
     always @(posedge clk or posedge rst) begin
         if (rst) begin
@@ -147,8 +157,7 @@ module day_6 (
                 end
                 
                 CALC_3: begin
-                    sum_accumulator <= sum_accumulator + saved_temp[0] + saved_temp[2] + saved_temp[4] + saved_temp[6] +
-                                       saved_temp[8] + saved_temp[10] + saved_temp[12] + saved_temp[14];
+                    sum_accumulator <= sum_accumulator + parallel_sum;
                     
                     if (idx[PARALLEL-1] >= NUM_ELEMENTS - 1) begin
                         state <= DONE;

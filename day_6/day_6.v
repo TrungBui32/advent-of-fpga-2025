@@ -19,24 +19,46 @@ module day_6 (
     
     reg [2:0] state;
     reg [15:0] idx;
+    reg [15:0] idx_plus_1;
     reg [RESULT_WIDTH-1:0] sum_accumulator;
-    wire [DATA_WIDTH-1:0] temp_values [0:3];
 
-    wire [3:0] line1_digit0, line1_digit1, line1_digit2, line1_digit3;
-    wire [3:0] line2_digit0, line2_digit1, line2_digit2, line2_digit3;
-    wire [3:0] line3_digit0, line3_digit1, line3_digit2, line3_digit3;
-    wire [3:0] line4_digit0, line4_digit1, line4_digit2, line4_digit3;
+    wire [DATA_WIDTH-1:0] temp_values_1 [0:3];
+    wire [DATA_WIDTH-1:0] temp_values_2 [0:3];
 
-    wire [15:0] bcd_values [3:0];
+    reg [DATA_WIDTH-1:0] temp_storage_1 [0:3];
+    reg [DATA_WIDTH-1:0] temp_storage_2 [0:3];
 
-    wire [DATA_WIDTH-1:0] extracted_value0_1000, extracted_value1_1000, extracted_value2_1000, extracted_value3_1000;
-    wire [DATA_WIDTH-1:0] extracted_value0_100, extracted_value1_100, extracted_value2_100, extracted_value3_100;
-    wire [DATA_WIDTH-1:0] extracted_value0_10, extracted_value1_10, extracted_value2_10, extracted_value3_10;
-    wire [DATA_WIDTH-1:0] extracted_value0_1, extracted_value1_1, extracted_value2_1, extracted_value3_1;
+    reg [63:0] saved_temp [0:3];
+
+    wire [3:0] line1_digit0_1, line1_digit1_1, line1_digit2_1, line1_digit3_1;
+    wire [3:0] line2_digit0_1, line2_digit1_1, line2_digit2_1, line2_digit3_1;
+    wire [3:0] line3_digit0_1, line3_digit1_1, line3_digit2_1, line3_digit3_1;
+    wire [3:0] line4_digit0_1, line4_digit1_1, line4_digit2_1, line4_digit3_1;
+
+    wire [3:0] line1_digit0_2, line1_digit1_2, line1_digit2_2, line1_digit3_2;
+    wire [3:0] line2_digit0_2, line2_digit1_2, line2_digit2_2, line2_digit3_2;
+    wire [3:0] line3_digit0_2, line3_digit1_2, line3_digit2_2, line3_digit3_2;
+    wire [3:0] line4_digit0_2, line4_digit1_2, line4_digit2_2, line4_digit3_2;
+
+    wire [15:0] bcd_values_1 [3:0];
+    wire [15:0] bcd_values_2 [3:0];
+
+    wire [DATA_WIDTH-1:0] extracted_value0_3_1, extracted_value1_3_1, extracted_value2_3_1, extracted_value3_3_1;
+    wire [DATA_WIDTH-1:0] extracted_value0_2_1, extracted_value1_2_1, extracted_value2_2_1, extracted_value3_2_1;
+    wire [DATA_WIDTH-1:0] extracted_value0_1_1, extracted_value1_1_1, extracted_value2_1_1, extracted_value3_1_1;
+    wire [DATA_WIDTH-1:0] extracted_value0_0_1, extracted_value1_0_1, extracted_value2_0_1, extracted_value3_0_1;
+
+    wire [DATA_WIDTH-1:0] extracted_value0_3_2, extracted_value1_3_2, extracted_value2_3_2, extracted_value3_3_2;
+    wire [DATA_WIDTH-1:0] extracted_value0_2_2, extracted_value1_2_2, extracted_value2_2_2, extracted_value3_2_2;
+    wire [DATA_WIDTH-1:0] extracted_value0_1_2, extracted_value1_1_2, extracted_value2_1_2, extracted_value3_1_2;
+    wire [DATA_WIDTH-1:0] extracted_value0_0_2, extracted_value1_0_2, extracted_value2_0_2, extracted_value3_0_2;
         
     localparam IDLE = 3'd0;
-    localparam CALC = 3'd1;
-    localparam DONE = 3'd2;
+    localparam EXTRACT = 3'd1;
+    localparam CALC_1 = 3'd2;
+    localparam CALC_2 = 3'd3;
+    localparam CALC_3 = 3'd4;
+    localparam DONE = 3'd5;
 
     function [15:0] divide_by_10;
         input [15:0] num;
@@ -55,75 +77,147 @@ module day_6 (
         $readmemh("op.mem", op);
     end
 
-    assign line1_digit0 = line1[idx][3:0];
-    assign line1_digit1 = line1[idx][7:4];
-    assign line1_digit2 = line1[idx][11:8];
-    assign line1_digit3 = line1[idx][15:12];
+    assign line1_digit0_1 = line1[idx][3:0];
+    assign line1_digit1_1 = line1[idx][7:4];
+    assign line1_digit2_1 = line1[idx][11:8];
+    assign line1_digit3_1 = line1[idx][15:12];
 
-    assign line2_digit0 = line2[idx][3:0];
-    assign line2_digit1 = line2[idx][7:4];
-    assign line2_digit2 = line2[idx][11:8];
-    assign line2_digit3 = line2[idx][15:12];
+    assign line2_digit0_1 = line2[idx][3:0];
+    assign line2_digit1_1 = line2[idx][7:4];
+    assign line2_digit2_1 = line2[idx][11:8];
+    assign line2_digit3_1 = line2[idx][15:12];
 
-    assign line3_digit0 = line3[idx][3:0];
-    assign line3_digit1 = line3[idx][7:4];
-    assign line3_digit2 = line3[idx][11:8];
-    assign line3_digit3 = line3[idx][15:12];
+    assign line3_digit0_1 = line3[idx][3:0];
+    assign line3_digit1_1 = line3[idx][7:4];
+    assign line3_digit2_1 = line3[idx][11:8];
+    assign line3_digit3_1 = line3[idx][15:12];
 
-    assign line4_digit0 = line4[idx][3:0];
-    assign line4_digit1 = line4[idx][7:4];
-    assign line4_digit2 = line4[idx][11:8];
-    assign line4_digit3 = line4[idx][15:12];
+    assign line4_digit0_1 = line4[idx][3:0];
+    assign line4_digit1_1 = line4[idx][7:4];
+    assign line4_digit2_1 = line4[idx][11:8];
+    assign line4_digit3_1 = line4[idx][15:12];
 
-    assign extracted_value0_1000 = line1_digit0;
-    assign extracted_value0_100 = (line1_digit0 << 3) + (line1_digit0 << 1) + line2_digit0; 
-    assign extracted_value0_10 = (line1_digit0 << 6) + (line1_digit0 << 5) + (line1_digit0 << 2) + (line2_digit0 << 3) + (line2_digit0 << 1) + line3_digit0;
-    assign extracted_value0_1 = (line1_digit0 << 9) + (line1_digit0 << 8) + (line1_digit0 << 7) + (line1_digit0 << 6) + (line1_digit0 << 5) + (line1_digit0 << 3) +
-                                (line2_digit0 << 6) + (line2_digit0 << 5) + (line2_digit0 << 2) + (line3_digit0 << 3) + (line3_digit0 << 1) + line4_digit0;
 
-    assign extracted_value1_1000 = line1_digit1;
-    assign extracted_value1_100 = (line1_digit1 << 3) + (line1_digit1 << 1) + line2_digit1; 
-    assign extracted_value1_10 = (line1_digit1 << 6) + (line1_digit1 << 5) + (line1_digit1 << 2) + (line2_digit1 << 3) + (line2_digit1 << 1) + line3_digit1;
-    assign extracted_value1_1 = (line1_digit1 << 9) + (line1_digit1 << 8) + (line1_digit1 << 7) + (line1_digit1 << 6) + (line1_digit1 << 5) + (line1_digit1 << 3) +
-                                (line2_digit1 << 6) + (line2_digit1 << 5) + (line2_digit1 << 2) + (line3_digit1 << 3) + (line3_digit1 << 1) + line4_digit1;
+    assign line1_digit0_2 = line1[idx_plus_1][3:0];
+    assign line1_digit1_2 = line1[idx_plus_1][7:4];
+    assign line1_digit2_2 = line1[idx_plus_1][11:8];
+    assign line1_digit3_2 = line1[idx_plus_1][15:12];
+
+    assign line2_digit0_2 = line2[idx_plus_1][3:0];
+    assign line2_digit1_2 = line2[idx_plus_1][7:4];
+    assign line2_digit2_2 = line2[idx_plus_1][11:8];
+    assign line2_digit3_2 = line2[idx_plus_1][15:12];
+
+    assign line3_digit0_2 = line3[idx_plus_1][3:0];
+    assign line3_digit1_2 = line3[idx_plus_1][7:4];
+    assign line3_digit2_2 = line3[idx_plus_1][11:8];
+    assign line3_digit3_2 = line3[idx_plus_1][15:12];
+
+    assign line4_digit0_2 = line4[idx_plus_1][3:0];
+    assign line4_digit1_2 = line4[idx_plus_1][7:4];
+    assign line4_digit2_2 = line4[idx_plus_1][11:8];
+    assign line4_digit3_2 = line4[idx_plus_1][15:12];
     
-    assign extracted_value2_1000 = line1_digit2;
-    assign extracted_value2_100 = (line1_digit2 << 3) + (line1_digit2 << 1) + line2_digit2; 
-    assign extracted_value2_10 = (line1_digit2 << 6) + (line1_digit2 << 5) + (line1_digit2 << 2) + (line2_digit2 << 3) + (line2_digit2 << 1) + line3_digit2;
-    assign extracted_value2_1 = (line1_digit2 << 9) + (line1_digit2 << 8) + (line1_digit2 << 7) + (line1_digit2 << 6) + (line1_digit2 << 5) + (line1_digit2 << 3) +
-                                (line2_digit2 << 6) + (line2_digit2 << 5) + (line2_digit2 << 2) + (line3_digit2 << 3) + (line3_digit2 << 1) + line4_digit2;
+
+    assign extracted_value0_3_1 = line1_digit0_1;
+    assign extracted_value0_2_1 = (line1_digit0_1 << 3) + (line1_digit0_1 << 1) + line2_digit0_1; 
+    assign extracted_value0_1_1 = (line1_digit0_1 << 6) + (line1_digit0_1 << 5) + (line1_digit0_1 << 2) + (line2_digit0_1 << 3) + (line2_digit0_1 << 1) + line3_digit0_1;
+    assign extracted_value0_0_1 = (line1_digit0_1 << 9) + (line1_digit0_1 << 8) + (line1_digit0_1 << 7) + (line1_digit0_1 << 6) + (line1_digit0_1 << 5) + (line1_digit0_1 << 3) +
+                                (line2_digit0_1 << 6) + (line2_digit0_1 << 5) + (line2_digit0_1 << 2) + (line3_digit0_1 << 3) + (line3_digit0_1 << 1) + line4_digit0_1;
+
+    assign extracted_value1_3_1 = line1_digit1_1;
+    assign extracted_value1_2_1 = (line1_digit1_1 << 3) + (line1_digit1_1 << 1) + line2_digit1_1; 
+    assign extracted_value1_1_1 = (line1_digit1_1 << 6) + (line1_digit1_1 << 5) + (line1_digit1_1 << 2) + (line2_digit1_1 << 3) + (line2_digit1_1 << 1) + line3_digit1_1;
+    assign extracted_value1_0_1 = (line1_digit1_1 << 9) + (line1_digit1_1 << 8) + (line1_digit1_1 << 7) + (line1_digit1_1 << 6) + (line1_digit1_1 << 5) + (line1_digit1_1 << 3) +
+                                (line2_digit1_1 << 6) + (line2_digit1_1 << 5) + (line2_digit1_1 << 2) + (line3_digit1_1 << 3) + (line3_digit1_1 << 1) + line4_digit1_1;
     
-    assign extracted_value3_1000 = line1_digit3;
-    assign extracted_value3_100 = (line1_digit3 << 3) + (line1_digit3 << 1) + line2_digit3; 
-    assign extracted_value3_10 = (line1_digit3 << 6) + (line1_digit3 << 5) + (line1_digit3 << 2) + (line2_digit3 << 3) + (line2_digit3 << 1) + line3_digit3;
-    assign extracted_value3_1 = (line1_digit3 << 9) + (line1_digit3 << 8) + (line1_digit3 << 7) + (line1_digit3 << 6) + (line1_digit3 << 5) + (line1_digit3 << 3) +
-                                (line2_digit3 << 6) + (line2_digit3 << 5) + (line2_digit3 << 2) + (line3_digit3 << 3) + (line3_digit3 << 1) + line4_digit3;
-
-
-    assign bcd_values[0] = {line1_digit0, line2_digit0, line3_digit0, line4_digit0};
-    assign bcd_values[1] = {line1_digit1, line2_digit1, line3_digit1, line4_digit1};
-    assign bcd_values[2] = {line1_digit2, line2_digit2, line3_digit2, line4_digit2};
-    assign bcd_values[3] = {line1_digit3, line2_digit3, line3_digit3, line4_digit3};
+    assign extracted_value2_3_1 = line1_digit2_1;
+    assign extracted_value2_2_1 = (line1_digit2_1 << 3) + (line1_digit2_1 << 1) + line2_digit2_1; 
+    assign extracted_value2_1_1 = (line1_digit2_1 << 6) + (line1_digit2_1 << 5) + (line1_digit2_1 << 2) + (line2_digit2_1 << 3) + (line2_digit2_1 << 1) + line3_digit2_1;
+    assign extracted_value2_0_1 = (line1_digit2_1 << 9) + (line1_digit2_1 << 8) + (line1_digit2_1 << 7) + (line1_digit2_1 << 6) + (line1_digit2_1 << 5) + (line1_digit2_1 << 3) +
+                                (line2_digit2_1 << 6) + (line2_digit2_1 << 5) + (line2_digit2_1 << 2) + (line3_digit2_1 << 3) + (line3_digit2_1 << 1) + line4_digit2_1;
     
-    assign temp_values[0] = (bcd_values[0][11:0] == 0) ? extracted_value0_1000 :
-                            (bcd_values[0][7:0] == 0) ? extracted_value0_100 :
-                            (bcd_values[0][3:0] == 0) ? extracted_value0_10 :
-                            extracted_value0_1;
+    assign extracted_value3_3_1 = line1_digit3_1;
+    assign extracted_value3_2_1 = (line1_digit3_1 << 3) + (line1_digit3_1 << 1) + line2_digit3_1; 
+    assign extracted_value3_1_1 = (line1_digit3_1 << 6) + (line1_digit3_1 << 5) + (line1_digit3_1 << 2) + (line2_digit3_1 << 3) + (line2_digit3_1 << 1) + line3_digit3_1;
+    assign extracted_value3_0_1 = (line1_digit3_1 << 9) + (line1_digit3_1 << 8) + (line1_digit3_1 << 7) + (line1_digit3_1 << 6) + (line1_digit3_1 << 5) + (line1_digit3_1 << 3) +
+                                (line2_digit3_1 << 6) + (line2_digit3_1 << 5) + (line2_digit3_1 << 2) + (line3_digit3_1 << 3) + (line3_digit3_1 << 1) + line4_digit3_1;
 
-    assign temp_values[1] = (bcd_values[1][11:0] == 0) ? extracted_value1_1000 :
-                            (bcd_values[1][7:0] == 0) ? extracted_value1_100 :
-                            (bcd_values[1][3:0] == 0) ? extracted_value1_10 :
-                            extracted_value1_1;
 
-    assign temp_values[2] = (bcd_values[2][11:0] == 0) ? extracted_value2_1000 :
-                            (bcd_values[2][7:0] == 0) ? extracted_value2_100 :
-                            (bcd_values[2][3:0] == 0) ? extracted_value2_10 :
-                            extracted_value2_1;
+    assign extracted_value0_3_2 = line1_digit0_2;
+    assign extracted_value0_2_2 = (line1_digit0_2 << 3) + (line1_digit0_2 << 1) + line2_digit0_2; 
+    assign extracted_value0_1_2 = (line1_digit0_2 << 6) + (line1_digit0_2 << 5) + (line1_digit0_2 << 2) + (line2_digit0_2 << 3) + (line2_digit0_2 << 1) + line3_digit0_2;
+    assign extracted_value0_0_2 = (line1_digit0_2 << 9) + (line1_digit0_2 << 8) + (line1_digit0_2 << 7) + (line1_digit0_2 << 6) + (line1_digit0_2 << 5) + (line1_digit0_2 << 3) +
+                                (line2_digit0_2 << 6) + (line2_digit0_2 << 5) + (line2_digit0_2 << 2) + (line3_digit0_2 << 3) + (line3_digit0_2 << 1) + line4_digit0_2;
 
-    assign temp_values[3] = (bcd_values[3][11:0] == 0) ? extracted_value3_1000 :
-                            (bcd_values[3][7:0] == 0) ? extracted_value3_100 :
-                            (bcd_values[3][3:0] == 0) ? extracted_value3_10 :
-                            extracted_value3_1;
+    assign extracted_value1_3_2 = line1_digit1_2;
+    assign extracted_value1_2_2 = (line1_digit1_2 << 3) + (line1_digit1_2 << 1) + line2_digit1_2; 
+    assign extracted_value1_1_2 = (line1_digit1_2 << 6) + (line1_digit1_2 << 5) + (line1_digit1_2 << 2) + (line2_digit1_2 << 3) + (line2_digit1_2 << 1) + line3_digit1_2;
+    assign extracted_value1_0_2 = (line1_digit1_2 << 9) + (line1_digit1_2 << 8) + (line1_digit1_2 << 7) + (line1_digit1_2 << 6) + (line1_digit1_2 << 5) + (line1_digit1_2 << 3) +
+                                (line2_digit1_2 << 6) + (line2_digit1_2 << 5) + (line2_digit1_2 << 2) + (line3_digit1_2 << 3) + (line3_digit1_2 << 1) + line4_digit1_2;
+
+    assign extracted_value2_3_2 = line1_digit2_2;
+    assign extracted_value2_2_2 = (line1_digit2_2 << 3) + (line1_digit2_2 << 1) + line2_digit2_2; 
+    assign extracted_value2_1_2 = (line1_digit2_2 << 6) + (line1_digit2_2 << 5) + (line1_digit2_2 << 2) + (line2_digit2_2 << 3) + (line2_digit2_2 << 1) + line3_digit2_2;
+    assign extracted_value2_0_2 = (line1_digit2_2 << 9) + (line1_digit2_2 << 8) + (line1_digit2_2 << 7) + (line1_digit2_2 << 6) + (line1_digit2_2 << 5) + (line1_digit2_2 << 3) +
+                                (line2_digit2_2 << 6) + (line2_digit2_2 << 5) + (line2_digit2_2 << 2) + (line3_digit2_2 << 3) + (line3_digit2_2 << 1) + line4_digit2_2;
+
+    assign extracted_value3_3_2 = line1_digit3_2;
+    assign extracted_value3_2_2 = (line1_digit3_2 << 3) + (line1_digit3_2 << 1) + line2_digit3_2; 
+    assign extracted_value3_1_2 = (line1_digit3_2 << 6) + (line1_digit3_2 << 5) + (line1_digit3_2 << 2) + (line2_digit3_2 << 3) + (line2_digit3_2 << 1) + line3_digit3_2;
+    assign extracted_value3_0_2 = (line1_digit3_2 << 9) + (line1_digit3_2 << 8) + (line1_digit3_2 << 7) + (line1_digit3_2 << 6) + (line1_digit3_2 << 5) + (line1_digit3_2 << 3) +
+                                (line2_digit3_2 << 6) + (line2_digit3_2 << 5) + (line2_digit3_2 << 2) + (line3_digit3_2 << 3) + (line3_digit3_2 << 1) + line4_digit3_2;
+
+    assign bcd_values_1[0] = {line1_digit0_1, line2_digit0_1, line3_digit0_1, line4_digit0_1};
+    assign bcd_values_1[1] = {line1_digit1_1, line2_digit1_1, line3_digit1_1, line4_digit1_1};
+    assign bcd_values_1[2] = {line1_digit2_1, line2_digit2_1, line3_digit2_1, line4_digit2_1};
+    assign bcd_values_1[3] = {line1_digit3_1, line2_digit3_1, line3_digit3_1, line4_digit3_1};
+
+    assign bcd_values_2[0] = {line1_digit0_2, line2_digit0_2, line3_digit0_2, line4_digit0_2};
+    assign bcd_values_2[1] = {line1_digit1_2, line2_digit1_2, line3_digit1_2, line4_digit1_2};
+    assign bcd_values_2[2] = {line1_digit2_2, line2_digit2_2, line3_digit2_2, line4_digit2_2};
+    assign bcd_values_2[3] = {line1_digit3_2, line2_digit3_2, line3_digit3_2, line4_digit3_2};
+    
+    assign temp_values_1[0] = (bcd_values_1[0][11:0] == 0) ? extracted_value0_3_1 :
+                            (bcd_values_1[0][7:0] == 0) ? extracted_value0_2_1 :
+                            (bcd_values_1[0][3:0] == 0) ? extracted_value0_1_1 :
+                            extracted_value0_0_1;
+
+    assign temp_values_1[1] = (bcd_values_1[1][11:0] == 0) ? extracted_value1_3_1 :
+                            (bcd_values_1[1][7:0] == 0) ? extracted_value1_2_1 :
+                            (bcd_values_1[1][3:0] == 0) ? extracted_value1_1_1 :
+                            extracted_value1_0_1;
+
+    assign temp_values_1[2] = (bcd_values_1[2][11:0] == 0) ? extracted_value2_3_1 :
+                            (bcd_values_1[2][7:0] == 0) ? extracted_value2_2_1 :
+                            (bcd_values_1[2][3:0] == 0) ? extracted_value2_1_1 :
+                            extracted_value2_0_1;
+
+    assign temp_values_1[3] = (bcd_values_1[3][11:0] == 0) ? extracted_value3_3_1 :
+                            (bcd_values_1[3][7:0] == 0) ? extracted_value3_2_1 :
+                            (bcd_values_1[3][3:0] == 0) ? extracted_value3_1_1 :
+                            extracted_value3_0_1;
+
+
+    assign temp_values_2[0] = (bcd_values_2[0][11:0] == 0) ? extracted_value0_3_2 :
+                            (bcd_values_2[0][7:0] == 0) ? extracted_value0_2_2 :
+                            (bcd_values_2[0][3:0] == 0) ? extracted_value0_1_2 :
+                            extracted_value0_0_2;
+
+    assign temp_values_2[1] = (bcd_values_2[1][11:0] == 0) ? extracted_value1_3_2 :
+                            (bcd_values_2[1][7:0] == 0) ? extracted_value1_2_2 :
+                            (bcd_values_2[1][3:0] == 0) ? extracted_value1_1_2 :
+                            extracted_value1_0_2;
+
+    assign temp_values_2[2] = (bcd_values_2[2][11:0] == 0) ? extracted_value2_3_2 :
+                            (bcd_values_2[2][7:0] == 0) ? extracted_value2_2_2 :
+                            (bcd_values_2[2][3:0] == 0) ? extracted_value2_1_2 :
+                            extracted_value2_0_2;
+    
+    assign temp_values_2[3] = (bcd_values_2[3][11:0] == 0) ? extracted_value3_3_2 :
+                            (bcd_values_2[3][7:0] == 0) ? extracted_value3_2_2 :
+                            (bcd_values_2[3][3:0] == 0) ? extracted_value3_1_2 :
+                            extracted_value3_0_2;
 
     always @(posedge clk or posedge rst) begin
         if (rst) begin
@@ -132,30 +226,86 @@ module day_6 (
             sum_accumulator <= 0;
             finished <= 0;
             result <= 0;
+            saved_temp[0] <= 0;
+            saved_temp[1] <= 0;
         end else begin
             case (state)
                 IDLE: begin
                     if (start) begin
-                        state <= CALC;
+                        state <= EXTRACT;
                         idx <= 0;
+                        idx_plus_1 <= 1;
                         sum_accumulator <= 0;
                         finished <= 0;
+                        saved_temp[0] <= 0;
+                        saved_temp[1] <= 0;
                     end
                 end
-                CALC: begin
-                    if (op[idx] == 1'b0) begin 
-                        sum_accumulator <= sum_accumulator +    ((temp_values[0] != 0) ? temp_values[0] : 1) * 
-                                                                ((temp_values[1] != 0) ? temp_values[1] : 1) * 
-                                                                ((temp_values[2] != 0) ? temp_values[2] : 1) * 
-                                                                ((temp_values[3] != 0) ? temp_values[3] : 1);
-                    end else begin  
-                        sum_accumulator <= sum_accumulator + temp_values[0] + temp_values[1] + temp_values[2] + temp_values[3];
+                EXTRACT: begin
+                    if(op[idx] == 1'b0) begin
+                        temp_storage_1[0] <= ((temp_values_1[0] != 0) ? temp_values_1[0] : 1);
+                        temp_storage_1[1] <= ((temp_values_1[1] != 0) ? temp_values_1[1] : 1);
+                        temp_storage_1[2] <= ((temp_values_1[2] != 0) ? temp_values_1[2] : 1);
+                        temp_storage_1[3] <= ((temp_values_1[3] != 0) ? temp_values_1[3] : 1);
+                    end else begin
+                        temp_storage_1[0] <= temp_values_1[0];
+                        temp_storage_1[1] <= temp_values_1[1];
+                        temp_storage_1[2] <= temp_values_1[2];
+                        temp_storage_1[3] <= temp_values_1[3];
                     end
-                    if (idx == NUM_ELEMENTS - 1) begin
+                    if(op[idx_plus_1] == 1'b0) begin
+                        temp_storage_2[0] <= ((temp_values_2[0] != 0) ? temp_values_2[0] : 1);
+                        temp_storage_2[1] <= ((temp_values_2[1] != 0) ? temp_values_2[1] : 1);
+                        temp_storage_2[2] <= ((temp_values_2[2] != 0) ? temp_values_2[2] : 1);
+                        temp_storage_2[3] <= ((temp_values_2[3] != 0) ? temp_values_2[3] : 1);
+                    end else begin
+                        temp_storage_2[0] <= temp_values_2[0];
+                        temp_storage_2[1] <= temp_values_2[1];
+                        temp_storage_2[2] <= temp_values_2[2];
+                        temp_storage_2[3] <= temp_values_2[3];
+                    end
+                    state <= CALC_1;
+                end
+                CALC_1: begin
+                    if (op[idx] == 1'b0) begin
+                        saved_temp[0] <= temp_storage_1[0] * temp_storage_1[1];
+                        saved_temp[1] <= temp_storage_1[2] * temp_storage_1[3];
+                    end else begin
+                        saved_temp[0] <= temp_storage_1[0] + temp_storage_1[1];
+                        saved_temp[1] <= temp_storage_1[2] + temp_storage_1[3];
+                    end
+
+                    if(op[idx_plus_1] == 1'b0) begin
+                        saved_temp[2] <= temp_storage_2[0] * temp_storage_2[1];
+                        saved_temp[3] <= temp_storage_2[2] * temp_storage_2[3];
+                    end else begin
+                        saved_temp[2] <= temp_storage_2[0] + temp_storage_2[1];
+                        saved_temp[3] <= temp_storage_2[2] + temp_storage_2[3];
+                    end
+                    state <= CALC_2;
+                end                
+                CALC_2: begin
+                    if (op[idx] == 1'b0) begin 
+                        saved_temp[0] <= saved_temp[0] * saved_temp[1];
+                    end else begin  
+                        saved_temp[0] <= saved_temp[0] + saved_temp[1];
+                    end
+                    if(op[idx_plus_1] == 1'b0) begin 
+                        saved_temp[2] <= saved_temp[2] * saved_temp[3];
+                    end else begin  
+                        saved_temp[2] <= saved_temp[2] + saved_temp[3];
+                    end
+                    state <= CALC_3;
+                end
+                CALC_3: begin
+                    sum_accumulator <= sum_accumulator + saved_temp[0] + saved_temp[2];
+                    if (idx >= NUM_ELEMENTS - 1 || idx_plus_1 >= NUM_ELEMENTS - 1) begin
                         state <= DONE;
                         idx <= 0;
                     end else begin
-                        idx <= idx + 1;
+                        idx <= idx + 2;
+                        idx_plus_1 <= idx_plus_1 + 2;
+                        state <= EXTRACT;
                     end
                 end
                 DONE: begin

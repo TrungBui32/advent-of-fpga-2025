@@ -5,10 +5,10 @@ module day_8(
     output reg finished,
     output reg [31:0] result
 );
-    localparam NUM_ELEMENT = 20;
+    localparam NUM_ELEMENT = 1000;
     localparam DISTANCE_WIDTH = 64;
     localparam TABLE_SIZE = NUM_ELEMENT * (NUM_ELEMENT - 1); 
-    localparam NUM_LOOP = 10;
+    localparam NUM_LOOP = 1000;
     
     // Design Notes: 3 tables
     // Table 1: store the x, y, z coordinates of each box, box valid, and box circuit
@@ -51,12 +51,13 @@ module day_8(
     end
 
     localparam IDLE = 3'd0;
-    localparam TABLE_INIT = 3'd1;
-    localparam SORT_DISTANCE = 3'd2;
-    localparam CONNECT_BOX = 3'd3;
-    localparam SORT_CIRCUIT = 3'd4;
-    localparam COMPUTE_RESULT = 3'd5;
-    localparam DONE = 3'd6;
+    localparam CALC_DISTANCE = 3'd1;
+    localparam FIND_POS = 3'd2;
+    localparam SHIFT = 3'd3;
+    localparam CONNECT_BOX = 3'd4;
+    localparam SORT_CIRCUIT = 3'd5;
+    localparam COMPUTE_RESULT = 3'd6;
+    localparam DONE = 3'd7;
 
     reg [2:0] state;
 
@@ -71,6 +72,14 @@ module day_8(
 
     reg [32:0] box_count;
     integer idx;
+    reg sorted;
+
+    reg [31:0] current_i, current_j;
+    reg [63:0] current_distance;
+    reg [31:0] insert_pos;
+    reg need_insert;
+    reg [31:0] num_stored;
+    reg [9:0] merge_size;
 
     always @(posedge clk or posedge rst) begin
         if (rst) begin
@@ -82,79 +91,99 @@ module day_8(
             iter_distance_table <= 0;
             circuit_index <= 0;
             box_count <= 0;
+            sorted <= 0;
+            insert_pos <= 0;
+            need_insert <= 0;
         end else begin
             case (state)
                 IDLE: begin
                     if (start) begin
-                        state <= TABLE_INIT;
+                        state <= CALC_DISTANCE;
                         sort_iter <= 0;
                         loop_count <= 0;
                         iter_distance_table <= 0;
                         circuit_index <= 0;
                         box_count <= 0;
                         idx = 0;
-                    end
-                end
-                TABLE_INIT: begin
-                    for (i = 0; i < NUM_ELEMENT; i = i + 1) begin
-                        for (j = 0; j < NUM_ELEMENT; j = j + 1) begin
-                            if (i < j) begin
-                                distance_table[idx] = 
-                                    (x[i] > x[j] ? (x[i] - x[j]) * (x[i] - x[j]) : (x[j] - x[i]) * (x[j] - x[i])) + 
-                                    (y[i] > y[j] ? (y[i] - y[j]) * (y[i] - y[j]) : (y[j] - y[i]) * (y[j] - y[i])) +
-                                    (z[i] > z[j] ? (z[i] - z[j]) * (z[i] - z[j]) : (z[j] - z[i]) * (z[j] - z[i]));
-                            end else begin
-                                distance_table[idx] = 64'hFFFFFFFFFFFFFFFF;
-                            end
-                            connection_src[idx] = i;
-                            connection_dst[idx] = j;
-                            idx = idx + 1;
+                        sorted <= 0;
+                        current_i <= 0;
+                        current_j <= 1;
+                        insert_pos <= 0;
+                        need_insert <= 0;
+                        num_stored <= 0;
+                        for (k = 0; k < NUM_LOOP; k = k + 1) begin
+                            distance_table[k] <= {DISTANCE_WIDTH{1'b1}};
                         end
                     end
-                    state <= SORT_DISTANCE;
-
-                    $display("Table Init Done");
-                    // for (s = 0; s < 100; s = s + 1) begin
-                    //     $display("Distance %0d: %0d between box %0d and box %0d", s, distance_table[s], connection_src[s], connection_dst[s]);
-                    // end
-
                 end
-                SORT_DISTANCE: begin
-                    sort_iter <= sort_iter + 1;
-                    if(sort_iter < TABLE_SIZE - 1) begin
-                        if(sort_iter[0] == 0) begin
-                            for(s = 0; s < TABLE_SIZE; s = s + 1) begin
-                                if(distance_table[s] > distance_table[s + 1]) begin
-                                    distance_table[s] <= distance_table[s + 1];
-                                    distance_table[s + 1] <= distance_table[s];
-                                    connection_src[s] <= connection_src[s + 1];
-                                    connection_src[s + 1] <= connection_src[s];
-                                    connection_dst[s] <= connection_dst[s + 1];
-                                    connection_dst[s + 1] <= connection_dst[s];
-                                end 
+                CALC_DISTANCE: begin
+                    current_distance <= (x[current_i] - x[current_j]) * (x[current_i] - x[current_j]) + 
+                                                        (y[current_i] - y[current_j]) * (y[current_i] - y[current_j]) + 
+                                                        (z[current_i] - z[current_j]) * (z[current_i] - z[current_j]);
+
+                    state <= FIND_POS;
+                    insert_pos <= 0;
+                    need_insert <= 0;
+                end
+                FIND_POS: begin
+                    if(num_stored < NUM_LOOP || current_distance < distance_table[num_stored-1]) begin
+                        for(i = 0; i < num_stored; i = i + 1) begin
+                            if(current_distance < distance_table[i]) begin
+                                insert_pos = i;
+                                need_insert = 1;
+                                i = num_stored; // break
+                            end
+                        end
+                        if(!need_insert && num_stored < NUM_LOOP) begin
+                            need_insert = 1;
+                            insert_pos <= num_stored;
+                        end
+                    end 
+
+                    if(need_insert) begin
+                        state <= SHIFT;
+                    end else begin
+                        if(current_j == NUM_ELEMENT - 1) begin
+                            if(current_i == NUM_ELEMENT - 2) begin
+                                state <= CONNECT_BOX;
+                            end else begin
+                                current_j <= current_i + 2;
+                                current_i <= current_i + 1;
+                                state <= CALC_DISTANCE;
                             end
                         end else begin
-                            for(s = 1; s < TABLE_SIZE - 1; s = s + 1) begin
-                                if(distance_table[s] > distance_table[s + 1]) begin
-                                    distance_table[s] <= distance_table[s + 1];
-                                    distance_table[s + 1] <= distance_table[s];
-                                    connection_src[s] <= connection_src[s + 1];
-                                    connection_src[s + 1] <= connection_src[s];
-                                    connection_dst[s] <= connection_dst[s + 1];
-                                    connection_dst[s + 1] <= connection_dst[s];
-                                end 
-                            end
+                            state <= CALC_DISTANCE;
+                            current_j <= current_j + 1;
                         end
-                        $display("Distance Sort Iteration %0d", sort_iter);
+                    end
+                end
+                SHIFT: begin
+                    for(i = NUM_LOOP - 1; i > insert_pos; i = i - 1) begin
+                        distance_table[i] <= distance_table[i-1];
+                        connection_src[i] <= connection_src[i-1];
+                        connection_dst[i] <= connection_dst[i-1];
+                    end
+
+                    // insert
+                    distance_table[insert_pos] <= current_distance;
+                    connection_src[insert_pos] <= current_i;
+                    connection_dst[insert_pos] <= current_j;
+
+                    if(num_stored < NUM_LOOP) begin
+                        num_stored <= num_stored + 1;
+                    end
+
+                    if(current_j == NUM_ELEMENT - 1) begin
+                        if(current_i == NUM_ELEMENT - 2) begin
+                            state <= CONNECT_BOX;
+                        end else begin
+                            current_j <= current_i + 2;
+                            current_i <= current_i + 1;
+                            state <= CALC_DISTANCE;
+                        end
                     end else begin
-                        state <= CONNECT_BOX;
-                        sort_iter <= 0;
-
-                        $display("Distance Sort Done");
-                        // for (s = 0; s < 100; s = s + 1) begin
-                        //     $display("Distance %0d: %0d between box %0d and box %0d", s, distance_table[s], connection_src[s], connection_dst[s]);
-                        // end
-
+                        state <= CALC_DISTANCE;
+                        current_j <= current_j + 1;
                     end
                 end
                 CONNECT_BOX: begin
@@ -206,20 +235,31 @@ module day_8(
                         if(box_circuit[connection_src[iter_distance_table]] != box_circuit[connection_dst[iter_distance_table]]) begin
                             src_circuit_index = box_circuit[connection_src[iter_distance_table]];
                             dest_circuit_index = box_circuit[connection_dst[iter_distance_table]];
-                            // move all boxes from dest circuit to src circuit
-                            for(i = 0; i < circuit_size[dest_circuit_index]; i = i + 1) begin
-                                circuit_table[src_circuit_index][circuit_size[src_circuit_index]] <= circuit_table[dest_circuit_index][i];
-                                box_circuit[circuit_table[dest_circuit_index][i]] <= src_circuit_index;
-                                circuit_size[src_circuit_index] <= circuit_size[src_circuit_index] + 1;
+                            
+                            // Store size before loop
+                            merge_size = circuit_size[dest_circuit_index];
+                            
+                            // Update all boxes' circuit assignment
+                            for(i = 0; i < NUM_ELEMENT; i = i + 1) begin
+                                if(box_circuit[i] == dest_circuit_index) begin
+                                    box_circuit[i] <= src_circuit_index;
+                                end
                             end
-                            // clear the dest circuit size
+                            
+                            // Copy circuit table
+                            for(i = 0; i < merge_size; i = i + 1) begin
+                                circuit_table[src_circuit_index][circuit_size[src_circuit_index] + i] <= 
+                                    circuit_table[dest_circuit_index][i];
+                            end
+                            
+                            // Update sizes after loop
+                            circuit_size[src_circuit_index] <= circuit_size[src_circuit_index] + merge_size;
                             circuit_size[dest_circuit_index] <= 0;
                         end
                     end
 
-                    if(loop_count == NUM_LOOP) begin
+                    if(loop_count == NUM_LOOP - 1) begin
                         state <= SORT_CIRCUIT;
-                        $display("Box Connection Done");
                     end else begin
                         loop_count <= loop_count + 1;
                         iter_distance_table <= iter_distance_table + 1;
@@ -229,14 +269,14 @@ module day_8(
                     sort_iter <= sort_iter + 1;
                     if(sort_iter < circuit_index) begin
                         if(sort_iter[0] == 0) begin
-                            for(s = 0; s < circuit_index; s = s + 1) begin
+                            for(s = 0; s < circuit_index - 1; s = s + 2) begin
                                 if(circuit_size[s] < circuit_size[s + 1]) begin
                                     circuit_size[s] <= circuit_size[s + 1];
                                     circuit_size[s + 1] <= circuit_size[s];
                                 end 
                             end
                         end else begin
-                            for(s = 1; s < circuit_index - 1; s = s + 1) begin
+                            for(s = 1; s < circuit_index - 1; s = s + 2) begin
                                 if(circuit_size[s] < circuit_size[s + 1]) begin
                                     circuit_size[s] <= circuit_size[s + 1];
                                     circuit_size[s + 1] <= circuit_size[s];
@@ -245,18 +285,15 @@ module day_8(
                         end
                     end else begin
                         state <= COMPUTE_RESULT;
-                        $display("Circuit Sort Done");
                     end
                 end 
                 COMPUTE_RESULT: begin
                     box_count <= circuit_size[0] * circuit_size[1] * circuit_size[2];
                     state <= DONE;
-                    $display("Result Computation Done");
                 end
                 DONE: begin
                     finished <= 1;
                     result <= box_count;
-                    $display("Finished with result: %0d", box_count);
                 end
             endcase
         end

@@ -6,7 +6,7 @@ with open('x.mem', 'w') as x_file, open('y.mem', 'w') as y_file:
         line = line.strip()
         if line:  
             x, y = line.split(',')
-            x_file.write(format(int(x), '064b') + '\n')
-            y_file.write(format(int(y), '064b') + '\n')
+            x_file.write(format(int(x), '032b') + '\n')
+            y_file.write(format(int(y), '032b') + '\n')
 
 print("Conversion complete! Created x.mem and y.mem with binary format")

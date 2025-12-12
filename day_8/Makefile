@@ -1,5 +1,5 @@
 TOPLEVEL_LANG = verilog
-VERILOG_SOURCES = day_8.v 
+VERILOG_SOURCES = day_8.v min5.v
 TOPLEVEL = day_8
 MODULE = test_day_8
 

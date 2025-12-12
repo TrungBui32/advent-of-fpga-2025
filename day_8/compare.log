@@ -1,0 +1,8 @@
+nohup: ignoring input
+Comparing result_py.txt against simulation.log
+Targeting Simulation Log Lines: 16 to 500015
+----------------------------------------
+----------------------------------------
+Comparison Complete.
+Lines Checked: 500000
+SUCCESS: Data matches perfectly.

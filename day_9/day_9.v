@@ -23,12 +23,13 @@ module day_9(
     reg [3:0] state;
     localparam IDLE = 4'd0;
     localparam SORT_X = 4'd1;
-    localparam SORT_Y = 4'd2;
-    localparam MAP = 4'd3;
-    localparam MARK_GREEN = 4'd4;
-    localparam TEST_RECTANGLE = 4'd5;
-    localparam CHECK_EDGES = 4'd6;
-    localparam DONE = 4'd7;
+    localparam MAP = 4'd2;
+    localparam MARK_GREEN = 4'd3;
+    localparam TEST_RECTANGLE = 4'd4;
+    localparam CHECK_EDGES_H = 4'd5; 
+    localparam CHECK_EDGES_V = 4'd6; 
+    localparam UPDATE_LARGEST = 4'd7; 
+    localparam DONE = 4'd8;
     
     reg [31:0] corner1_idx, corner2_idx; 
     reg [31:0] rect_x1, rect_y1, rect_x2, rect_y2;
@@ -37,10 +38,11 @@ module day_9(
     
     reg rect_valid;
     reg sorted;
-    reg [31:0] sort_iter_x, sort_iter_y;
+    reg [31:0] sort_iter;
     reg [31:0] original_x, original_y;
     reg [31:0] iter1, iter2;
     reg [31:0] dx, dy;
+    reg [31:0] edge_iter;
 
     integer i, j;
     
@@ -96,8 +98,7 @@ module day_9(
                         largest_area <= 0;
                         state <= SORT_X;
                         sorted <= 0;
-                        sort_iter_x <= 0;
-                        sort_iter_y <= 0;
+                        sort_iter <= 0;
                         iter1 <= 0;
                         iter2 <= 0;
                         for(i = 0; i < NUM_ELEMENTS; i = i + 2) begin
@@ -107,7 +108,7 @@ module day_9(
                     end
                 end
                 SORT_X: begin
-                    if(sort_iter_x[0] == 0) begin
+                    if(sort_iter[0] == 0) begin
                         sorted = 1;
                         for(i = 0; i < NUM_ELEMENTS / 2 - 1; i = i + 2) begin
                             if(x_unique[i] > x_unique[i + 1]) begin
@@ -115,7 +116,14 @@ module day_9(
                                 x_unique[i + 1] <= x_unique[i];
                                 sorted <= 0;
                             end
-                        end 
+                        end
+                        for(i = 0; i < NUM_ELEMENTS / 2 - 1; i = i + 2) begin
+                            if(y_unique[i] > y_unique[i + 1]) begin
+                                y_unique[i] <= y_unique[i + 1];
+                                y_unique[i + 1] <= y_unique[i];
+                                sorted <= 0;
+                            end
+                        end
                     end else begin
                         sorted = 1;
                         for(i = 1; i < NUM_ELEMENTS / 2 - 1; i = i + 2) begin
@@ -125,42 +133,21 @@ module day_9(
                                 sorted <= 0;
                             end
                         end
+                        sorted = 1;
+                        for(i = 1; i < NUM_ELEMENTS / 2 - 1; i = i + 2) begin
+                            if(y_unique[i] > y_unique[i + 1]) begin
+                                y_unique[i] <= y_unique[i + 1];
+                                y_unique[i + 1] <= y_unique[i];
+                                sorted <= 0;
+                            end
+                        end
                     end
-                    if(sort_iter_x == NUM_ELEMENTS - 1) begin
-                        sort_iter_x <= 0;
-                        sort_iter_y <= 0;
+                    if(sort_iter == NUM_ELEMENTS - 1) begin
+                        sort_iter <= 0;
                         sorted <= 0;
-                        state <= SORT_Y;
-                    end else begin
-                        sort_iter_x <= sort_iter_x + 1;
-                    end
-                end
-                
-                SORT_Y: begin
-                    if(sort_iter_y[0] == 0) begin
-                        sorted = 1;
-                        for(i = 0; i < NUM_ELEMENTS / 2 - 1; i = i + 2) begin
-                            if(y_unique[i] > y_unique[i + 1]) begin
-                                y_unique[i] <= y_unique[i + 1];
-                                y_unique[i + 1] <= y_unique[i];
-                                sorted <= 0;
-                            end
-                        end
-                    end else begin
-                        sorted = 1;
-                        for(i = 1; i < NUM_ELEMENTS / 2 - 1; i = i + 2) begin
-                            if(y_unique[i] > y_unique[i + 1]) begin
-                                y_unique[i] <= y_unique[i + 1];
-                                y_unique[i + 1] <= y_unique[i];
-                                sorted <= 0;
-                            end
-                        end
-                    end
-                    if(sort_iter_y == NUM_ELEMENTS - 1) begin
-                        iter1 <= 0;
                         state <= MAP;
                     end else begin
-                        sort_iter_y <= sort_iter_y + 1;
+                        sort_iter <= sort_iter + 1;
                     end
                 end
                 
@@ -224,22 +211,20 @@ module day_9(
                     if(corner1_idx < NUM_ELEMENTS) begin
                         if(corner2_idx < NUM_ELEMENTS) begin
                             if(corner1_idx != corner2_idx) begin
-                                rect_x1 <= (x_compressed[corner1_idx] < x_compressed[corner2_idx]) ? x_compressed[corner1_idx] : x_compressed[corner2_idx];
-                                rect_y1 <= (y_compressed[corner1_idx] < y_compressed[corner2_idx]) ? y_compressed[corner1_idx] : y_compressed[corner2_idx];
-                                rect_x2 <= (x_compressed[corner1_idx] > x_compressed[corner2_idx]) ? x_compressed[corner1_idx] : x_compressed[corner2_idx];
-                                rect_y2 <= (y_compressed[corner1_idx] > y_compressed[corner2_idx]) ? y_compressed[corner1_idx] : y_compressed[corner2_idx];
+                                rect_x1 = (x_compressed[corner1_idx] < x_compressed[corner2_idx]) ? x_compressed[corner1_idx] : x_compressed[corner2_idx];
+                                rect_y1 = (y_compressed[corner1_idx] < y_compressed[corner2_idx]) ? y_compressed[corner1_idx] : y_compressed[corner2_idx];
+                                rect_x2 = (x_compressed[corner1_idx] > x_compressed[corner2_idx]) ? x_compressed[corner1_idx] : x_compressed[corner2_idx];
+                                rect_y2 = (y_compressed[corner1_idx] > y_compressed[corner2_idx]) ? y_compressed[corner1_idx] : y_compressed[corner2_idx];
 
-                                if(rect_x1 == rect_x2 || rect_y1 == rect_y2) begin
+                                dx = (x[corner1_idx] > x[corner2_idx]) ? (x[corner1_idx] - x[corner2_idx]) : (x[corner2_idx] - x[corner1_idx]);
+                                dy = (y[corner1_idx] > y[corner2_idx]) ? (y[corner1_idx] - y[corner2_idx]) : (y[corner2_idx] - y[corner1_idx]);
+                                current_area = (dx + 1 ) * (dy + 1);
+
+                                if(rect_x1 == rect_x2 || rect_y1 == rect_y2 || current_area <= largest_area) begin
                                     corner2_idx <= corner2_idx + 1;
                                 end else begin
-                                    dx = (x[corner1_idx] > x[corner2_idx]) ? (x[corner1_idx] - x[corner2_idx]) : (x[corner2_idx] - x[corner1_idx]);
-                                    dy = (y[corner1_idx] > y[corner2_idx]) ? (y[corner1_idx] - y[corner2_idx]) : (y[corner2_idx] - y[corner1_idx]);
-                                    current_area = (dx + 1 ) * (dy + 1);
-                                    if(current_area <= largest_area) begin
-                                        corner2_idx <= corner2_idx + 1;
-                                    end else begin
-                                        state <= CHECK_EDGES;
-                                    end
+                                    edge_iter <= rect_x1;
+                                    state <= CHECK_EDGES_H;
                                 end
                             end else begin
                                 corner2_idx <= corner2_idx + 1;
@@ -252,23 +237,35 @@ module day_9(
                         state <= DONE;
                     end
                 end
-                CHECK_EDGES: begin
-                    rect_valid = 1;
-                    for(i = rect_x1; i <= rect_x2; i = i + 1) begin
-                        if(!is_green[rect_y1][i] || !is_green[rect_y2][i]) begin
-                            rect_valid = 0;
+                CHECK_EDGES_H: begin
+                    if (edge_iter > rect_x2) begin
+                        edge_iter <= rect_y1;
+                        state <= CHECK_EDGES_V;
+                    end else begin
+                        if (!is_green[rect_y1][edge_iter] || !is_green[rect_y2][edge_iter]) begin
+                            corner2_idx <= corner2_idx + 1;
+                            state <= TEST_RECTANGLE;
+                        end else begin
+                            edge_iter <= edge_iter + 1;
                         end
                     end
-                    for(j = rect_y1; j <= rect_y2; j = j + 1) begin
-                        if(!is_green[j][rect_x1] || !is_green[j][rect_x2]) begin
-                            rect_valid = 0;
+                end
+                CHECK_EDGES_V: begin
+                    if (edge_iter > rect_y2) begin
+                        state <= UPDATE_LARGEST;
+                    end else begin
+                        if (!is_green[edge_iter][rect_x1] || !is_green[edge_iter][rect_x2]) begin
+                            corner2_idx <= corner2_idx + 1;
+                            state <= TEST_RECTANGLE;
+                        end else begin
+                            edge_iter <= edge_iter + 1;
                         end
                     end
-                    
-                    if(rect_valid && current_area > largest_area) begin
+                end
+                UPDATE_LARGEST: begin
+                    if (current_area > largest_area) begin
                         largest_area <= current_area;
                     end
-                    
                     corner2_idx <= corner2_idx + 1;
                     state <= TEST_RECTANGLE;
                 end

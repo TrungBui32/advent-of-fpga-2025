@@ -83,24 +83,26 @@ module day_11(
                     end
                 end
                 LOOP2: begin
-                    if(iter2 == NUM_DEVICES -1) begin
-                        state <= LOOP1;
-                        iter1 <= 0;
-                    end else begin
-                        iter2 <= iter2 + 1;
-                        iter3 <= 0;
+                    $display("iter2: %d", iter2);
+                    if(iter2 < NUM_DEVICES) begin
                         state <= UPDATE;
+                        iter3 <= 0;
+                    end else begin
+                        iter2 <= 0;
+                        iter1 <= 0;
+                        state <= LOOP1;
                     end
                 end
                 UPDATE: begin
                     current_dest = destinations[iter2][(iter3+1)*DEVICE_WIDTH-1 -: DEVICE_WIDTH];
                     if(current_dest == current_source) begin
-                        dest_counts[iter2][(iter3+1)*DEVICE_WIDTH-1 -: DEVICE_WIDTH] <= current_count;
+                        dest_counts[iter2][(iter3+1)*DEVICE_WIDTH-1 -: DATA_WIDTH] <= current_count;
                         dest_reached[iter2] <= dest_reached[iter2] + 1;
                         sum_dest_counts[iter2] <= sum_dest_counts[iter2] + current_count;
                     end
                     if(iter3 == num_dests[iter2] -1) begin
                         state <= LOOP2;
+                        iter2 <= iter2 + 1;
                         updated[iter1] <= 1'b1;
                     end else begin
                         iter3 <= iter3 + 1;

@@ -1,7 +1,6 @@
 import re
 
 def parse_and_convert(input_filename):
-    MAX_BUTTONS = 13
     MAX_LIGHTS = 32 
     BIT_WIDTH = 32
     
@@ -16,6 +15,7 @@ def parse_and_convert(input_filename):
 
     re_lights = re.compile(r'\[([.#]+)\]') 
     re_buttons = re.compile(r'\(([\d,]+)\)') 
+    re_joltage = re.compile(r'\{([0-9,]+)\}')
 
     for line in lines:
         if not line.strip():
@@ -44,21 +44,34 @@ def parse_and_convert(input_filename):
             
         num_buttons = len(current_machine_buttons)
 
+        joltage_match = re_joltage.search(line)
+        joltage_values = []
+        if joltage_match:
+            joltage_str = joltage_match.group(1)
+            joltage_values = [int(x) for x in joltage_str.split(',')]
+
         parsed_machines.append({
             'target': target_val,
             'buttons': current_machine_buttons,
+            'joltage': joltage_values,
             'num_lights': num_lights,
-            'num_buttons': num_buttons
+            'num_buttons': num_buttons,
+            'num_joltage': len(joltage_values)
         })
 
+    MAX_BUTTONS = max(machine['num_buttons'] for machine in parsed_machines) if parsed_machines else 0
+    MAX_JOLTAGE = max(machine['num_joltage'] for machine in parsed_machines) if parsed_machines else 0
+    
     print(f"Total machines: {len(parsed_machines)}")
+    print(f"Max buttons: {MAX_BUTTONS}, Max joltage: {MAX_JOLTAGE}")
 
     def to_bin(val):
         return f"{val:0{BIT_WIDTH}b}"
 
     with open('light.mem', 'w') as f_light, \
          open('buttons.mem', 'w') as f_btn, \
-         open('config.mem', 'w') as f_conf:
+         open('config.mem', 'w') as f_conf, \
+         open('joltage.mem', 'w') as f_jolt:
         
         for machine in parsed_machines:
             f_light.write(f"{to_bin(machine['target'])}\n")
@@ -73,7 +86,13 @@ def parse_and_convert(input_filename):
             for _ in range(padding_btn):
                 f_btn.write(f"{to_bin(0)}\n")
 
-    print("Files generated: light.mem, buttons.mem, config.mem")
+            for i in range(MAX_JOLTAGE):
+                if i < len(machine['joltage']):
+                    f_jolt.write(f"{to_bin(machine['joltage'][i])}\n")
+                else:
+                    f_jolt.write(f"{to_bin(0)}\n")
+
+    print("Files generated: light.mem, buttons.mem, config.mem, joltage.mem")
 
 if __name__ == "__main__":
     parse_and_convert("input.txt")

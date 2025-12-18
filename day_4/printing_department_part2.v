@@ -1,4 +1,4 @@
-module day_4(
+module printing_department_part2(
     input clk,
     input rst,
     input start,

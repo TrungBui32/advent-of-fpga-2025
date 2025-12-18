@@ -20,6 +20,4 @@ async def test(dut):
     while not dut.finished.value:
         await RisingEdge(dut.clk)
     
-    print(f"Final result: {int(dut.output_sum.value)}")
-    for i in range(4):
-        print(f"Memory: {int(dut.highest_array[i].value)}")
+    print(f"Final result: {int(dut.result.value)}")

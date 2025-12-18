@@ -1,9 +1,9 @@
-module day_3(
+module lobby_part2(
     input clk,
     input rst,
     input start,
     output reg finished,
-    output reg [47:0] output_sum
+    output reg [47:0] result
 );
     localparam WIDTH = 400;
     localparam HEIGHT = 200;
@@ -20,8 +20,7 @@ module day_3(
     wire [39:0] highest_array [0:HEIGHT-1];
     
     initial begin
-        $readmemh("input.mem", bank);
-        finished = 1'b0;
+        $readmemh("input2.mem", bank);
     end
 
     genvar i;
@@ -46,7 +45,7 @@ module day_3(
         if (rst) begin
             finished <= 1'b0;
             bank_index <= 0;
-            output_sum <= 48'd0;
+            result <= 48'd0;
             state <= IDLE;
             j <= 8'd0;
         end else begin
@@ -55,13 +54,13 @@ module day_3(
                     if(all_finished) begin
                         state <= SUM;
                         j <= 0;
-                        output_sum <= 0;
+                        result <= 0;
                     end
                     finished <= 0;
                 end
                 SUM: begin
                     if( j < HEIGHT) begin
-                        output_sum <= output_sum + highest_array[j];
+                        result <= result + highest_array[j];
                         j <= j + 1;
                     end else begin
                         state <= DONE;

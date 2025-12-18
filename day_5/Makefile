@@ -1,6 +1,6 @@
 TOPLEVEL_LANG = verilog
-VERILOG_SOURCES = day_5.v 
-TOPLEVEL = day_5
+VERILOG_SOURCES = cafeteria_part2.v 
+TOPLEVEL = cafeteria_part2
 MODULE = test_day_5
 
 COCOTB_HDL_TIMEUNIT = 1ns

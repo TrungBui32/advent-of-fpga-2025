@@ -1,4 +1,4 @@
-module day_12(
+module christmas_tree_farm(
     input clk,
     input rst,
     input start,

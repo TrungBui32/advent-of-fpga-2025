@@ -1,6 +1,6 @@
 TOPLEVEL_LANG = verilog
-VERILOG_SOURCES = day_12.v 
-TOPLEVEL = day_12
+VERILOG_SOURCES = christmas_tree_farm.v 
+TOPLEVEL = christmas_tree_farm
 MODULE = test_day_12
 
 COCOTB_HDL_TIMEUNIT = 1ns

@@ -1,4 +1,4 @@
-module day_6 (
+module trash_compactor_part2 (
     input clk,
     input rst,
     input start,

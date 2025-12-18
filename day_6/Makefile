@@ -1,6 +1,6 @@
 TOPLEVEL_LANG = verilog
-VERILOG_SOURCES = day_6.v 
-TOPLEVEL = day_6
+VERILOG_SOURCES = trash_compactor_part1.v 
+TOPLEVEL = trash_compactor_part1
 MODULE = test_day_6
 
 COCOTB_HDL_TIMEUNIT = 1ns

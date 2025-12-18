@@ -1,6 +1,6 @@
 TOPLEVEL_LANG = verilog
-VERILOG_SOURCES = day_8.v min5.v
-TOPLEVEL = day_8
+VERILOG_SOURCES = playground_part1.v min5.v
+TOPLEVEL = playground_part1
 MODULE = test_day_8
 
 COCOTB_HDL_TIMEUNIT = 1ns

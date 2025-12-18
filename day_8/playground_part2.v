@@ -1,4 +1,4 @@
-module day_8(
+module playground_part2(
     input clk,
     input rst,
     input start,

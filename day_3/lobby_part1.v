@@ -22,22 +22,25 @@ module lobby_part1(
         reg [3:0] second_highest;
         reg [3:0] current_digit;
         reg [WIDTH-1:0] temp_num;
+        integer k;
         begin
             second_highest = num % 10;
             temp_num = num / 10;
             highest = temp_num % 10;
             temp_num = temp_num / 10;
             
-            while(temp_num > 0) begin
-                current_digit = temp_num % 10;
-                
-                if (current_digit >= highest) begin
-                    if(second_highest < highest) begin
-                        second_highest = highest;
-                    end
-                    highest = current_digit;
-                end 
-                temp_num = temp_num / 10;
+            for(k = 0; k < 100; k = k + 1) begin
+                if(temp_num > 0) begin
+                    current_digit = temp_num % 10;
+                    
+                    if (current_digit >= highest) begin
+                        if(second_highest < highest) begin
+                            second_highest = highest;
+                        end
+                        highest = current_digit;
+                    end 
+                    temp_num = temp_num / 10;
+                end
             end
             
             find_highest = highest * 10 + second_highest;

@@ -1,4 +1,4 @@
-module day_11(
+module reactor_part2(
     input clk,
     input rst, 
     input start, 

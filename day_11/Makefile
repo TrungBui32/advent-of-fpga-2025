@@ -1,6 +1,6 @@
 TOPLEVEL_LANG = verilog
-VERILOG_SOURCES = day_11.v 
-TOPLEVEL = day_11
+VERILOG_SOURCES = reactor_part1.v 
+TOPLEVEL = reactor_part1
 MODULE = test_day_11
 
 COCOTB_HDL_TIMEUNIT = 1ns

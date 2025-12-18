@@ -1,6 +1,6 @@
 TOPLEVEL_LANG = verilog
-VERILOG_SOURCES = day_9.v 
-TOPLEVEL = day_9
+VERILOG_SOURCES = movie_theater_part1.v 
+TOPLEVEL = movie_theater_part1
 MODULE = test_day_9
 
 COCOTB_HDL_TIMEUNIT = 1ns

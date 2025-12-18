@@ -1,4 +1,4 @@
-module day_9(
+module movie_theater_part2(
     input clk,
     input rst,
     input start,

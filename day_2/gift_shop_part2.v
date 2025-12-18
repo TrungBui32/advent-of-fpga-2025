@@ -1,4 +1,4 @@
-module day_2(
+module gift_shop_part2(
     input clk, 
     input rst,
     input start,
@@ -45,10 +45,10 @@ module day_2(
             assign current_digits[k] = (search_val / (10 ** k)) % 10;
         end
     endgenerate
-
+    integer i;
     always @(posedge clk) begin
         if(state == CHECK_PATTERN && !check_valid) begin 
-            for(integer i = 0; i < 20; i = i + 1) begin
+            for(i = 0; i < 20; i = i + 1) begin
                 digits[i] <= current_digits[i];
             end
             check_val <= search_val;

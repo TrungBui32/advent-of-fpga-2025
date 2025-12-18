@@ -1,0 +1,541 @@
+nohup: ignoring input
+rm -f results.xml
+"make" -f Makefile results.xml
+make[1]: Entering directory '/home/trungbui/advent-of-fpga-2025/day_10'
+/usr/local/bin/iverilog -o sim_build/sim.vvp -D COCOTB_SIM=1 -s day_10 -g2012 -f sim_build/cmds.f  day_10.v 
+rm -f results.xml
+MODULE=test_day_10 TESTCASE= TOPLEVEL=day_10 TOPLEVEL_LANG=verilog \
+         /usr/local/bin/vvp -M /home/trungbui/.local/lib/python3.10/site-packages/cocotb/libs -m libcocotbvpi_icarus   sim_build/sim.vvp  
+     -.--ns INFO     gpi                                ..mbed/gpi_embed.cpp:79   in set_program_name_in_venv        Did not detect Python virtual environment. Using system-wide Python interpreter
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:101  in gpi_print_registered_impl       VPI registered
+     0.00ns INFO     cocotb                             Running on Icarus Verilog version 11.0 (stable)
+     0.00ns INFO     cocotb                             Running tests with cocotb v1.9.2 from /home/trungbui/.local/lib/python3.10/site-packages/cocotb
+     0.00ns INFO     cocotb                             Seeding Python random module with 1766024914
+     0.00ns INFO     cocotb.regression                  Found test test_day_10.test
+     0.00ns INFO     cocotb.regression                  running test (1/1)
+Processing machine 0 with 6 buttons
+Current joltages:
+  Joltage 0: 3
+  Joltage 1: 5
+  Joltage 2: 4
+  Joltage 3: 7
+  Joltage 4: 0
+  Joltage 5: 0
+Current buttons:
+  Button 0: 8
+  Button 1: 10
+  Button 2: 4
+  Button 3: 12
+  Button 4: 5
+  Button 5: 3
+Current joltage mask: 001011
+Total valid patterns for machine 0: 4
+ Pattern 0: 010110, Presses 3
+ Pattern 1: 011011, Presses 4
+ Pattern 2: 100001, Presses 2
+ Pattern 3: 101100, Presses 3
+temp_joltages after SUBTRACT_PATTERN for machine 0:
+  Joltage 0: 2
+  Joltage 1: 4
+  Joltage 2: 2
+  Joltage 3: 6
+  Joltage 4: 0
+  Joltage 5: 0
+max presses set to 3 for machine 0
+Final joltages after DIVIDE_PATTERN for machine 0:
+  Joltage 0: 1
+  Joltage 1: 2
+  Joltage 2: 1
+  Joltage 3: 3
+  Joltage 4: 0
+  Joltage 5: 0
+Coefficients for patterns: 2
+DEBUG: Current press_count = [0,0,0,0,0,0], max_presses=3
+DEBUG: Current press_count = [0,0,0,1,0,0], max_presses=3
+DEBUG: Current press_count = [0,0,0,2,0,0], max_presses=3
+DEBUG: Current press_count = [0,0,0,3,0,0], max_presses=3
+DEBUG: Current press_count = [0,0,0,0,1,0], max_presses=3
+ Found similar pattern with presses: 4
+DEBUG: Current press_count = [0,0,0,1,1,0], max_presses=3
+DEBUG: Current press_count = [0,0,0,2,1,0], max_presses=3
+DEBUG: Current press_count = [0,0,0,3,1,0], max_presses=3
+DEBUG: Current press_count = [0,0,0,0,2,0], max_presses=3
+DEBUG: Current press_count = [0,0,0,1,2,0], max_presses=3
+DEBUG: Current press_count = [0,0,0,2,2,0], max_presses=3
+DEBUG: Current press_count = [0,0,0,3,2,0], max_presses=3
+DEBUG: Current press_count = [0,0,0,0,3,0], max_presses=3
+DEBUG: Current press_count = [0,0,0,1,3,0], max_presses=3
+DEBUG: Current press_count = [0,0,0,2,3,0], max_presses=3
+DEBUG: Current press_count = [0,0,0,3,3,0], max_presses=3
+DEBUG: Current press_count = [0,0,0,0,0,1], max_presses=3
+DEBUG: Current press_count = [0,0,0,1,0,1], max_presses=3
+DEBUG: Current press_count = [0,0,0,2,0,1], max_presses=3
+DEBUG: Current press_count = [0,0,0,3,0,1], max_presses=3
+DEBUG: Current press_count = [0,0,0,0,1,1], max_presses=3
+DEBUG: Current press_count = [0,0,0,1,1,1], max_presses=3
+DEBUG: Current press_count = [0,0,0,2,1,1], max_presses=3
+DEBUG: Current press_count = [0,0,0,3,1,1], max_presses=3
+DEBUG: Current press_count = [0,0,0,0,2,1], max_presses=3
+DEBUG: Current press_count = [0,0,0,1,2,1], max_presses=3
+DEBUG: Current press_count = [0,0,0,2,2,1], max_presses=3
+DEBUG: Current press_count = [0,0,0,3,2,1], max_presses=3
+DEBUG: Current press_count = [0,0,0,0,3,1], max_presses=3
+DEBUG: Current press_count = [0,0,0,1,3,1], max_presses=3
+DEBUG: Current press_count = [0,0,0,2,3,1], max_presses=3
+DEBUG: Current press_count = [0,0,0,3,3,1], max_presses=3
+DEBUG: Current press_count = [0,0,0,0,0,2], max_presses=3
+DEBUG: Current press_count = [0,0,0,1,0,2], max_presses=3
+DEBUG: Current press_count = [0,0,0,2,0,2], max_presses=3
+DEBUG: Current press_count = [0,0,0,3,0,2], max_presses=3
+DEBUG: Current press_count = [0,0,0,0,1,2], max_presses=3
+DEBUG: Current press_count = [0,0,0,1,1,2], max_presses=3
+DEBUG: Current press_count = [0,0,0,2,1,2], max_presses=3
+DEBUG: Current press_count = [0,0,0,3,1,2], max_presses=3
+DEBUG: Current press_count = [0,0,0,0,2,2], max_presses=3
+DEBUG: Current press_count = [0,0,0,1,2,2], max_presses=3
+DEBUG: Current press_count = [0,0,0,2,2,2], max_presses=3
+DEBUG: Current press_count = [0,0,0,3,2,2], max_presses=3
+DEBUG: Current press_count = [0,0,0,0,3,2], max_presses=3
+DEBUG: Current press_count = [0,0,0,1,3,2], max_presses=3
+DEBUG: Current press_count = [0,0,0,2,3,2], max_presses=3
+DEBUG: Current press_count = [0,0,0,3,3,2], max_presses=3
+DEBUG: Current press_count = [0,0,0,0,0,3], max_presses=3
+DEBUG: Current press_count = [0,0,0,1,0,3], max_presses=3
+DEBUG: Current press_count = [0,0,0,2,0,3], max_presses=3
+DEBUG: Current press_count = [0,0,0,3,0,3], max_presses=3
+DEBUG: Current press_count = [0,0,0,0,1,3], max_presses=3
+DEBUG: Current press_count = [0,0,0,1,1,3], max_presses=3
+DEBUG: Current press_count = [0,0,0,2,1,3], max_presses=3
+DEBUG: Current press_count = [0,0,0,3,1,3], max_presses=3
+DEBUG: Current press_count = [0,0,0,0,2,3], max_presses=3
+DEBUG: Current press_count = [0,0,0,1,2,3], max_presses=3
+DEBUG: Current press_count = [0,0,0,2,2,3], max_presses=3
+DEBUG: Current press_count = [0,0,0,3,2,3], max_presses=3
+DEBUG: Current press_count = [0,0,0,0,3,3], max_presses=3
+DEBUG: Current press_count = [0,0,0,1,3,3], max_presses=3
+DEBUG: Current press_count = [0,0,0,2,3,3], max_presses=3
+DEBUG: Current press_count = [0,0,0,3,3,3], max_presses=3
+DEBUG: Finished searching for pattern 0. Final press_count = [3,3,3,3,3,3]
+temp_joltages after SUBTRACT_PATTERN for machine 0:
+  Joltage 0: 2
+  Joltage 1: 4
+  Joltage 2: 2
+  Joltage 3: 4
+  Joltage 4: 0
+  Joltage 5: 0
+max presses set to 2 for machine 0
+Final joltages after DIVIDE_PATTERN for machine 0:
+  Joltage 0: 1
+  Joltage 1: 2
+  Joltage 2: 1
+  Joltage 3: 2
+  Joltage 4: 0
+  Joltage 5: 0
+Coefficients for patterns: 2
+DEBUG: Current press_count = [0,0,0,0,0,0], max_presses=2
+DEBUG: Current press_count = [0,0,0,1,0,0], max_presses=2
+DEBUG: Current press_count = [0,0,0,2,0,0], max_presses=2
+DEBUG: Current press_count = [0,0,0,0,1,0], max_presses=2
+ Found similar pattern with presses: 3
+DEBUG: Current press_count = [0,0,0,1,1,0], max_presses=2
+DEBUG: Current press_count = [0,0,0,2,1,0], max_presses=2
+DEBUG: Current press_count = [0,0,0,0,2,0], max_presses=2
+DEBUG: Current press_count = [0,0,0,1,2,0], max_presses=2
+DEBUG: Current press_count = [0,0,0,2,2,0], max_presses=2
+DEBUG: Current press_count = [0,0,0,0,0,1], max_presses=2
+DEBUG: Current press_count = [0,0,0,1,0,1], max_presses=2
+DEBUG: Current press_count = [0,0,0,2,0,1], max_presses=2
+DEBUG: Current press_count = [0,0,0,0,1,1], max_presses=2
+DEBUG: Current press_count = [0,0,0,1,1,1], max_presses=2
+DEBUG: Current press_count = [0,0,0,2,1,1], max_presses=2
+DEBUG: Current press_count = [0,0,0,0,2,1], max_presses=2
+DEBUG: Current press_count = [0,0,0,1,2,1], max_presses=2
+DEBUG: Current press_count = [0,0,0,2,2,1], max_presses=2
+DEBUG: Current press_count = [0,0,0,0,0,2], max_presses=2
+DEBUG: Current press_count = [0,0,0,1,0,2], max_presses=2
+DEBUG: Current press_count = [0,0,0,2,0,2], max_presses=2
+DEBUG: Current press_count = [0,0,0,0,1,2], max_presses=2
+DEBUG: Current press_count = [0,0,0,1,1,2], max_presses=2
+DEBUG: Current press_count = [0,0,0,2,1,2], max_presses=2
+DEBUG: Current press_count = [0,0,0,0,2,2], max_presses=2
+DEBUG: Current press_count = [0,0,0,1,2,2], max_presses=2
+DEBUG: Current press_count = [0,0,0,2,2,2], max_presses=2
+DEBUG: Finished searching for pattern 1. Final press_count = [2,2,2,2,2,2]
+temp_joltages after SUBTRACT_PATTERN for machine 0:
+  Joltage 0: 2
+  Joltage 1: 4
+  Joltage 2: 4
+  Joltage 3: 6
+  Joltage 4: 0
+  Joltage 5: 0
+max presses set to 3 for machine 0
+Final joltages after DIVIDE_PATTERN for machine 0:
+  Joltage 0: 1
+  Joltage 1: 2
+  Joltage 2: 2
+  Joltage 3: 3
+  Joltage 4: 0
+  Joltage 5: 0
+Coefficients for patterns: 2
+DEBUG: Current press_count = [0,0,0,0,0,0], max_presses=3
+DEBUG: Current press_count = [0,0,0,1,0,0], max_presses=3
+DEBUG: Current press_count = [0,0,0,2,0,0], max_presses=3
+DEBUG: Current press_count = [0,0,0,3,0,0], max_presses=3
+DEBUG: Current press_count = [0,0,0,0,1,0], max_presses=3
+ Found similar pattern with presses: 5
+DEBUG: Current press_count = [0,0,0,1,1,0], max_presses=3
+ Found similar pattern with presses: 4
+DEBUG: Current press_count = [0,0,0,2,1,0], max_presses=3
+DEBUG: Current press_count = [0,0,0,3,1,0], max_presses=3
+DEBUG: Current press_count = [0,0,0,0,2,0], max_presses=3
+DEBUG: Current press_count = [0,0,0,1,2,0], max_presses=3
+DEBUG: Current press_count = [0,0,0,2,2,0], max_presses=3
+DEBUG: Current press_count = [0,0,0,3,2,0], max_presses=3
+DEBUG: Current press_count = [0,0,0,0,3,0], max_presses=3
+DEBUG: Current press_count = [0,0,0,1,3,0], max_presses=3
+DEBUG: Current press_count = [0,0,0,2,3,0], max_presses=3
+DEBUG: Current press_count = [0,0,0,3,3,0], max_presses=3
+DEBUG: Current press_count = [0,0,0,0,0,1], max_presses=3
+DEBUG: Current press_count = [0,0,0,1,0,1], max_presses=3
+DEBUG: Current press_count = [0,0,0,2,0,1], max_presses=3
+DEBUG: Current press_count = [0,0,0,3,0,1], max_presses=3
+DEBUG: Current press_count = [0,0,0,0,1,1], max_presses=3
+DEBUG: Current press_count = [0,0,0,1,1,1], max_presses=3
+DEBUG: Current press_count = [0,0,0,2,1,1], max_presses=3
+DEBUG: Current press_count = [0,0,0,3,1,1], max_presses=3
+DEBUG: Current press_count = [0,0,0,0,2,1], max_presses=3
+DEBUG: Current press_count = [0,0,0,1,2,1], max_presses=3
+DEBUG: Current press_count = [0,0,0,2,2,1], max_presses=3
+DEBUG: Current press_count = [0,0,0,3,2,1], max_presses=3
+DEBUG: Current press_count = [0,0,0,0,3,1], max_presses=3
+DEBUG: Current press_count = [0,0,0,1,3,1], max_presses=3
+DEBUG: Current press_count = [0,0,0,2,3,1], max_presses=3
+DEBUG: Current press_count = [0,0,0,3,3,1], max_presses=3
+DEBUG: Current press_count = [0,0,0,0,0,2], max_presses=3
+DEBUG: Current press_count = [0,0,0,1,0,2], max_presses=3
+DEBUG: Current press_count = [0,0,0,2,0,2], max_presses=3
+DEBUG: Current press_count = [0,0,0,3,0,2], max_presses=3
+DEBUG: Current press_count = [0,0,0,0,1,2], max_presses=3
+DEBUG: Current press_count = [0,0,0,1,1,2], max_presses=3
+DEBUG: Current press_count = [0,0,0,2,1,2], max_presses=3
+DEBUG: Current press_count = [0,0,0,3,1,2], max_presses=3
+DEBUG: Current press_count = [0,0,0,0,2,2], max_presses=3
+DEBUG: Current press_count = [0,0,0,1,2,2], max_presses=3
+DEBUG: Current press_count = [0,0,0,2,2,2], max_presses=3
+DEBUG: Current press_count = [0,0,0,3,2,2], max_presses=3
+DEBUG: Current press_count = [0,0,0,0,3,2], max_presses=3
+DEBUG: Current press_count = [0,0,0,1,3,2], max_presses=3
+DEBUG: Current press_count = [0,0,0,2,3,2], max_presses=3
+DEBUG: Current press_count = [0,0,0,3,3,2], max_presses=3
+DEBUG: Current press_count = [0,0,0,0,0,3], max_presses=3
+DEBUG: Current press_count = [0,0,0,1,0,3], max_presses=3
+DEBUG: Current press_count = [0,0,0,2,0,3], max_presses=3
+DEBUG: Current press_count = [0,0,0,3,0,3], max_presses=3
+DEBUG: Current press_count = [0,0,0,0,1,3], max_presses=3
+DEBUG: Current press_count = [0,0,0,1,1,3], max_presses=3
+DEBUG: Current press_count = [0,0,0,2,1,3], max_presses=3
+DEBUG: Current press_count = [0,0,0,3,1,3], max_presses=3
+DEBUG: Current press_count = [0,0,0,0,2,3], max_presses=3
+DEBUG: Current press_count = [0,0,0,1,2,3], max_presses=3
+DEBUG: Current press_count = [0,0,0,2,2,3], max_presses=3
+DEBUG: Current press_count = [0,0,0,3,2,3], max_presses=3
+DEBUG: Current press_count = [0,0,0,0,3,3], max_presses=3
+DEBUG: Current press_count = [0,0,0,1,3,3], max_presses=3
+DEBUG: Current press_count = [0,0,0,2,3,3], max_presses=3
+DEBUG: Current press_count = [0,0,0,3,3,3], max_presses=3
+DEBUG: Finished searching for pattern 2. Final press_count = [3,3,3,3,3,3]
+temp_joltages after SUBTRACT_PATTERN for machine 0:
+  Joltage 0: 2
+  Joltage 1: 4
+  Joltage 2: 2
+  Joltage 3: 6
+  Joltage 4: 0
+  Joltage 5: 0
+max presses set to 3 for machine 0
+Final joltages after DIVIDE_PATTERN for machine 0:
+  Joltage 0: 1
+  Joltage 1: 2
+  Joltage 2: 1
+  Joltage 3: 3
+  Joltage 4: 0
+  Joltage 5: 0
+Coefficients for patterns: 2
+DEBUG: Current press_count = [0,0,0,0,0,0], max_presses=3
+DEBUG: Current press_count = [0,0,0,1,0,0], max_presses=3
+DEBUG: Current press_count = [0,0,0,2,0,0], max_presses=3
+DEBUG: Current press_count = [0,0,0,3,0,0], max_presses=3
+DEBUG: Current press_count = [0,0,0,0,1,0], max_presses=3
+ Found similar pattern with presses: 4
+DEBUG: Current press_count = [0,0,0,1,1,0], max_presses=3
+DEBUG: Current press_count = [0,0,0,2,1,0], max_presses=3
+DEBUG: Current press_count = [0,0,0,3,1,0], max_presses=3
+DEBUG: Current press_count = [0,0,0,0,2,0], max_presses=3
+DEBUG: Current press_count = [0,0,0,1,2,0], max_presses=3
+DEBUG: Current press_count = [0,0,0,2,2,0], max_presses=3
+DEBUG: Current press_count = [0,0,0,3,2,0], max_presses=3
+DEBUG: Current press_count = [0,0,0,0,3,0], max_presses=3
+DEBUG: Current press_count = [0,0,0,1,3,0], max_presses=3
+DEBUG: Current press_count = [0,0,0,2,3,0], max_presses=3
+DEBUG: Current press_count = [0,0,0,3,3,0], max_presses=3
+DEBUG: Current press_count = [0,0,0,0,0,1], max_presses=3
+DEBUG: Current press_count = [0,0,0,1,0,1], max_presses=3
+DEBUG: Current press_count = [0,0,0,2,0,1], max_presses=3
+DEBUG: Current press_count = [0,0,0,3,0,1], max_presses=3
+DEBUG: Current press_count = [0,0,0,0,1,1], max_presses=3
+DEBUG: Current press_count = [0,0,0,1,1,1], max_presses=3
+DEBUG: Current press_count = [0,0,0,2,1,1], max_presses=3
+DEBUG: Current press_count = [0,0,0,3,1,1], max_presses=3
+DEBUG: Current press_count = [0,0,0,0,2,1], max_presses=3
+DEBUG: Current press_count = [0,0,0,1,2,1], max_presses=3
+DEBUG: Current press_count = [0,0,0,2,2,1], max_presses=3
+DEBUG: Current press_count = [0,0,0,3,2,1], max_presses=3
+DEBUG: Current press_count = [0,0,0,0,3,1], max_presses=3
+DEBUG: Current press_count = [0,0,0,1,3,1], max_presses=3
+DEBUG: Current press_count = [0,0,0,2,3,1], max_presses=3
+DEBUG: Current press_count = [0,0,0,3,3,1], max_presses=3
+DEBUG: Current press_count = [0,0,0,0,0,2], max_presses=3
+DEBUG: Current press_count = [0,0,0,1,0,2], max_presses=3
+DEBUG: Current press_count = [0,0,0,2,0,2], max_presses=3
+DEBUG: Current press_count = [0,0,0,3,0,2], max_presses=3
+DEBUG: Current press_count = [0,0,0,0,1,2], max_presses=3
+DEBUG: Current press_count = [0,0,0,1,1,2], max_presses=3
+DEBUG: Current press_count = [0,0,0,2,1,2], max_presses=3
+DEBUG: Current press_count = [0,0,0,3,1,2], max_presses=3
+DEBUG: Current press_count = [0,0,0,0,2,2], max_presses=3
+DEBUG: Current press_count = [0,0,0,1,2,2], max_presses=3
+DEBUG: Current press_count = [0,0,0,2,2,2], max_presses=3
+DEBUG: Current press_count = [0,0,0,3,2,2], max_presses=3
+DEBUG: Current press_count = [0,0,0,0,3,2], max_presses=3
+DEBUG: Current press_count = [0,0,0,1,3,2], max_presses=3
+DEBUG: Current press_count = [0,0,0,2,3,2], max_presses=3
+DEBUG: Current press_count = [0,0,0,3,3,2], max_presses=3
+DEBUG: Current press_count = [0,0,0,0,0,3], max_presses=3
+DEBUG: Current press_count = [0,0,0,1,0,3], max_presses=3
+DEBUG: Current press_count = [0,0,0,2,0,3], max_presses=3
+DEBUG: Current press_count = [0,0,0,3,0,3], max_presses=3
+DEBUG: Current press_count = [0,0,0,0,1,3], max_presses=3
+DEBUG: Current press_count = [0,0,0,1,1,3], max_presses=3
+DEBUG: Current press_count = [0,0,0,2,1,3], max_presses=3
+DEBUG: Current press_count = [0,0,0,3,1,3], max_presses=3
+DEBUG: Current press_count = [0,0,0,0,2,3], max_presses=3
+DEBUG: Current press_count = [0,0,0,1,2,3], max_presses=3
+DEBUG: Current press_count = [0,0,0,2,2,3], max_presses=3
+DEBUG: Current press_count = [0,0,0,3,2,3], max_presses=3
+DEBUG: Current press_count = [0,0,0,0,3,3], max_presses=3
+DEBUG: Current press_count = [0,0,0,1,3,3], max_presses=3
+DEBUG: Current press_count = [0,0,0,2,3,3], max_presses=3
+DEBUG: Current press_count = [0,0,0,3,3,3], max_presses=3
+DEBUG: Finished searching for pattern 3. Final press_count = [3,3,3,3,3,3]
+min presses[0]: 4, coefficients[0]: 2, cost_table1[0]: 3
+min presses[1]: 3, coefficients[1]: 2, cost_table1[1]: 4
+min presses[2]: 4, coefficients[2]: 2, cost_table1[2]: 2
+min presses[3]: 4, coefficients[3]: 2, cost_table1[3]: 3
+Final minimum presses for machine 0: 10
+Processing machine 1 with 5 buttons
+Current joltages:
+  Joltage 0: 7
+  Joltage 1: 5
+  Joltage 2: 12
+  Joltage 3: 7
+  Joltage 4: 2
+  Joltage 5: 0
+Current buttons:
+  Button 0: 29
+  Button 1: 12
+  Button 2: 17
+  Button 3: 7
+  Button 4: 30
+  Button 5: 0
+Current joltage mask: 001011
+Total valid patterns for machine 1: 2
+ Pattern 0: 001010, Presses 2
+ Pattern 1: 001101, Presses 3
+temp_joltages after SUBTRACT_PATTERN for machine 1:
+  Joltage 0: 6
+  Joltage 1: 4
+  Joltage 2: 10
+  Joltage 3: 6
+  Joltage 4: 2
+  Joltage 5: 0
+max presses set to 5 for machine 1
+Final joltages after DIVIDE_PATTERN for machine 1:
+  Joltage 0: 3
+  Joltage 1: 2
+  Joltage 2: 5
+  Joltage 3: 3
+  Joltage 4: 1
+  Joltage 5: 0
+Coefficients for patterns: 2
+DEBUG: Current press_count = [0,0,0,0,0,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,1,0,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,2,0,0], max_presses=5
+ Found similar pattern with presses: 5
+DEBUG: Current press_count = [0,0,0,3,0,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,4,0,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,5,0,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,0,1,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,1,1,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,2,1,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,3,1,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,4,1,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,5,1,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,0,2,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,1,2,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,2,2,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,3,2,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,4,2,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,5,2,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,0,3,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,1,3,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,2,3,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,3,3,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,4,3,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,5,3,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,0,4,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,1,4,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,2,4,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,3,4,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,4,4,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,5,4,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,0,5,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,1,5,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,2,5,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,3,5,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,4,5,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,5,5,0], max_presses=5
+DEBUG: Finished searching for pattern 0. Final press_count = [5,5,5,5,5,0]
+temp_joltages after SUBTRACT_PATTERN for machine 1:
+  Joltage 0: 4
+  Joltage 1: 4
+  Joltage 2: 10
+  Joltage 3: 6
+  Joltage 4: 0
+  Joltage 5: 0
+max presses set to 5 for machine 1
+Final joltages after DIVIDE_PATTERN for machine 1:
+  Joltage 0: 2
+  Joltage 1: 2
+  Joltage 2: 5
+  Joltage 3: 3
+  Joltage 4: 0
+  Joltage 5: 0
+Coefficients for patterns: 2
+DEBUG: Current press_count = [0,0,0,0,0,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,1,0,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,2,0,0], max_presses=5
+ Found similar pattern with presses: 5
+DEBUG: Current press_count = [0,0,0,3,0,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,4,0,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,5,0,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,0,1,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,1,1,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,2,1,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,3,1,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,4,1,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,5,1,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,0,2,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,1,2,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,2,2,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,3,2,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,4,2,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,5,2,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,0,3,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,1,3,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,2,3,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,3,3,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,4,3,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,5,3,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,0,4,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,1,4,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,2,4,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,3,4,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,4,4,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,5,4,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,0,5,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,1,5,0], max_presses=5
+DEBUG: Current press_coFinal result: 33
+300850.00ns INFO     cocotb.regression                  test passed
+300850.00ns INFO     cocotb.regression                  **************************************************************************************
+                                                        ** TEST                          STATUS  SIM TIME (ns)  REAL TIME (s)  RATIO (ns/s) **
+                                                        **************************************************************************************
+                                                        ** test_day_10.test               PASS      300850.00           3.59      83819.95  **
+                                                        **************************************************************************************
+                                                        ** TESTS=1 PASS=1 FAIL=0 SKIP=0             300850.00           3.64      82551.95  **
+                                                        **************************************************************************************
+                                                        
+unt = [0,0,0,2,5,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,3,5,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,4,5,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,5,5,0], max_presses=5
+DEBUG: Finished searching for pattern 1. Final press_count = [5,5,5,5,5,0]
+min presses[0]: 5, coefficients[0]: 2, cost_table1[0]: 2
+min presses[1]: 5, coefficients[1]: 2, cost_table1[1]: 3
+Final minimum presses for machine 1: 12
+Processing machine 2 with 4 buttons
+Current joltages:
+  Joltage 0: 10
+  Joltage 1: 11
+  Joltage 2: 11
+  Joltage 3: 5
+  Joltage 4: 10
+  Joltage 5: 5
+Current buttons:
+  Button 0: 31
+  Button 1: 25
+  Button 2: 55
+  Button 3: 6
+  Button 4: 0
+  Button 5: 0
+Current joltage mask: 101110
+Total valid patterns for machine 2: 2
+ Pattern 0: 000110, Presses 2
+ Pattern 1: 001101, Presses 3
+temp_joltages after SUBTRACT_PATTERN for machine 2:
+  Joltage 0: 8
+  Joltage 1: 10
+  Joltage 2: 10
+  Joltage 3: 4
+  Joltage 4: 8
+  Joltage 5: 4
+max presses set to 5 for machine 2
+Final joltages after DIVIDE_PATTERN for machine 2:
+  Joltage 0: 4
+  Joltage 1: 5
+  Joltage 2: 5
+  Joltage 3: 2
+  Joltage 4: 4
+  Joltage 5: 2
+Coefficients for patterns: 2
+DEBUG: Current press_count = [0,0,0,0,0,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,1,0,0], max_presses=5
+ Found similar pattern with presses: 5
+DEBUG: Current press_count = [0,0,0,2,0,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,3,0,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,4,0,0], max_presses=5
+DEBUG: Current press_count = [0,0,0,5,0,0], max_presses=5
+DEBUG: Finished searching for pattern 0. Final press_count = [5,5,5,5,0,0]
+temp_joltages after SUBTRACT_PATTERN for machine 2:
+  Joltage 0: 8
+  Joltage 1: 8
+  Joltage 2: 8
+  Joltage 3: 4
+  Joltage 4: 8
+  Joltage 5: 4
+max presses set to 2 for machine 2
+Final joltages after DIVIDE_PATTERN for machine 2:
+  Joltage 0: 2
+  Joltage 1: 2
+  Joltage 2: 2
+  Joltage 3: 1
+  Joltage 4: 2
+  Joltage 5: 1
+Coefficients for patterns: 4
+DEBUG: Current press_count = [0,0,0,0,0,0], max_presses=2
+ Found similar pattern with presses: 2
+DEBUG: Current press_count = [0,0,0,1,0,0], max_presses=2
+DEBUG: Current press_count = [0,0,0,2,0,0], max_presses=2
+DEBUG: Finished searching for pattern 1. Final press_count = [2,2,2,2,0,0]
+min presses[0]: 5, coefficients[0]: 2, cost_table1[0]: 2
+min presses[1]: 2, coefficients[1]: 4, cost_table1[1]: 3
+Final minimum presses for machine 2: 11
+make[1]: Leaving directory '/home/trungbui/advent-of-fpga-2025/day_10'

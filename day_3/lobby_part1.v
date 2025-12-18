@@ -51,8 +51,8 @@ module lobby_part1(
         end
     endgenerate
 
+    integer j;
     always @(*) begin
-        integer j;
         result = 0;
         for (j = 0; j < HEIGHT; j = j + 1) begin
             result = result + highest_array[j];

@@ -5,12 +5,11 @@ module gift_shop_part1(
     output reg finished,
     output reg [63:0] result
 );
-    localparam IDLE = 3'b000;
-    localparam LOAD = 3'b001;
-    localparam EXTRACT_DIGITS = 3'b010;
-    localparam CHECK_PATTERN = 3'b011;
-    localparam NEXT_NUM = 3'b100;
-    localparam DONE = 3'b101;
+    localparam IDLE = 3'd0;
+    localparam LOAD_RANGE = 3'd1;
+    localparam CALC_BOUNDS = 3'd2;
+    localparam GEN_NUMBERS = 3'd3;
+    localparam DONE = 3'd4;
         
     localparam LENGTH = 34;
 
@@ -20,25 +19,47 @@ module gift_shop_part1(
 
     reg [63:0] accumulator;
     reg [5:0] range_idx;
-    reg [63:0] search_val;
-    reg [63:0] val_1;
-    reg [63:0] val_2;
     
-    reg [63:0] temp_num;
-    reg [3:0] digits [0:19]; 
-    reg [4:0] digit_count;
-    reg [4:0] half_count;
-    reg [4:0] check_idx;
-    reg pattern_match;
-    integer j;
+    reg [63:0] range_start;
+    reg [63:0] range_end;
+
+    reg [63:0] half_iter; 
+    reg [63:0] half_max; 
+    
+    reg [63:0] mul_const;
+    reg [63:0] current_generated_val;
+    
+    reg [63:0] current_p10; 
+    reg [63:0] next_p10;    
+    integer power_idx; 
+
+    reg [63:0] start_candidate;
+    reg [63:0] end_candidate;
+    reg [63:0] natural_min;
+    reg [63:0] natural_max;
 
     initial begin
         $readmemb("table_1.mem", table_1);
         $readmemb("table_2.mem", table_2);
-        for(j = 0; j < 20; j = j + 1) begin
-            digits[j] = 0;
-        end
     end
+
+    function [63:0] get_p10;
+        input [3:0] idx;
+        case(idx)
+            0: get_p10 = 1;
+            1: get_p10 = 10;
+            2: get_p10 = 100;
+            3: get_p10 = 1000;
+            4: get_p10 = 10000;
+            5: get_p10 = 100000;
+            6: get_p10 = 1000000;
+            7: get_p10 = 10000000;
+            8: get_p10 = 100000000;
+            9: get_p10 = 1000000000;
+            10: get_p10 = 64'd10000000000;
+            default: get_p10 = 1;
+        endcase
+    endfunction
 
     always @(posedge clk) begin
         if(rst) begin
@@ -46,82 +67,80 @@ module gift_shop_part1(
             finished <= 1'b0;
             accumulator <= 64'b0;
             range_idx <= 6'b0;
+            power_idx <= 0;
         end else begin
             case(state)
                 IDLE: begin
                     if(start) begin
                         accumulator <= 64'b0;
                         range_idx <= 6'b0;
-                        state <= LOAD;
+                        state <= LOAD_RANGE;
                     end
                 end
                 
-                LOAD: begin
+                LOAD_RANGE: begin
                     if(range_idx < LENGTH) begin
-                        val_1 <= table_1[range_idx];
-                        val_2 <= table_2[range_idx];
-                        search_val <= table_1[range_idx];
-                        range_idx <= range_idx + 1;
-                        state <= CHECK_PATTERN;
+                        range_start <= table_1[range_idx];
+                        range_end <= table_2[range_idx];
+                        
+                        power_idx <= 1;
+                        state <= CALC_BOUNDS;
                     end else begin
                         state <= DONE;
                     end
                 end
-                
-                CHECK_PATTERN: begin
-                    if(search_val >= 64'd0 && search_val <= 64'd99) begin
-                        if(search_val / 10 == search_val % 10) begin
-                            accumulator <= accumulator + search_val;
-                        end
-                    end else if (search_val >= 64'd1000 && search_val <= 64'd9999) begin 
-                        if(search_val / 100 == search_val % 100) begin 
-                            accumulator <= accumulator + search_val;
-                        end 
-                    end else if (search_val >= 64'd100000 && search_val <= 64'd999999) begin 
-                        if(search_val / 1000 == search_val % 1000) begin 
-                            accumulator <= accumulator + search_val;
-                        end 
-                    end else if (search_val >= 64'd10000000 && search_val <= 64'd99999999) begin 
-                        if(search_val / 10000 == search_val % 10000) begin 
-                            accumulator <= accumulator + search_val;
-                        end 
-                    end else if (search_val >= 64'd1000000000 && search_val <= 64'd9999999999) begin 
-                        if(search_val / 100000 == search_val % 100000) begin 
-                            accumulator <= accumulator + search_val;
-                        end 
-                    end else if (search_val >= 64'd100000000000 && search_val <= 64'd999999999999) begin 
-                        if(search_val / 1000000 == search_val % 1000000) begin 
-                            accumulator <= accumulator + search_val;
-                        end
-                    end else if (search_val >= 64'd10000000000000 && search_val <= 64'd99999999999999) begin 
-                        if(search_val / 10000000 == search_val % 10000000) begin 
-                            accumulator <= accumulator + search_val;
-                        end 
-                    end else if (search_val >= 64'd1000000000000000 && search_val <= 64'd9999999999999999) begin 
-                        if(search_val / 100000000 == search_val % 100000000) begin 
-                            accumulator <= accumulator + search_val;
-                        end 
-                    end else if (search_val >= 64'd100000000000000000 && search_val <= 64'd999999999999999999) begin 
-                        if(search_val / 1000000000 == search_val % 1000000000) begin 
-                            accumulator <= accumulator + search_val;
-                        end
-                    end else if (search_val >= 64'd10000000000000000000 && search_val <= 64'd18446744073709551615) begin 
-                        if(search_val / 64'd10000000000 == search_val % 64'd10000000000) begin 
-                            accumulator <= accumulator + search_val;
-                        end
-                    end
-                    state <= NEXT_NUM;
+                CALC_BOUNDS: begin
+                    current_p10 = get_p10(power_idx);  
+                    next_p10 = get_p10(power_idx) * 10;
+                    
+                    mul_const <= current_p10 + 1;      
+                    
+                    natural_min = get_p10(power_idx-1); 
+                    natural_max = current_p10 - 1; 
+
+                    start_candidate = range_start / current_p10;
+                    if (start_candidate < natural_min) 
+                        half_iter <= natural_min;
+                    else 
+                        half_iter <= start_candidate;
+
+                    end_candidate = range_end / current_p10;
+                    if (end_candidate < natural_max) 
+                        half_max <= end_candidate;
+                    else 
+                        half_max <= natural_max;
+
+                    state <= GEN_NUMBERS;
                 end
-                
-                NEXT_NUM: begin
-                    if(search_val < val_2) begin
-                        search_val <= search_val + 1;
-                        state <= CHECK_PATTERN;
+                GEN_NUMBERS: begin
+                    if (half_iter > half_max) begin
+                        if (power_idx < 10) begin 
+                            power_idx <= power_idx + 1;
+                            state <= CALC_BOUNDS;
+                        end else begin
+                            range_idx <= range_idx + 1;
+                            state <= LOAD_RANGE;
+                        end
                     end else begin
-                        state <= LOAD;
+                        current_generated_val = half_iter * mul_const;
+
+                        if (current_generated_val >= range_start && current_generated_val <= range_end) begin
+                            accumulator <= accumulator + current_generated_val;
+                        end
+
+                        if (half_iter < half_max) begin
+                            half_iter <= half_iter + 1;
+                        end else begin
+                            if (power_idx < 10) begin 
+                                power_idx <= power_idx + 1;
+                                state <= CALC_BOUNDS;
+                            end else begin
+                                range_idx <= range_idx + 1;
+                                state <= LOAD_RANGE;
+                            end
+                        end
                     end
                 end
-                
                 DONE: begin
                     result <= accumulator;
                     finished <= 1'b1;

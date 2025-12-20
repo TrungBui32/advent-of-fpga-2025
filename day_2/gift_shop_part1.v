@@ -8,8 +8,10 @@ module gift_shop_part1(
     localparam IDLE = 3'd0;
     localparam LOAD_RANGE = 3'd1;
     localparam CALC_BOUNDS = 3'd2;
-    localparam GEN_NUMBERS = 3'd3;
-    localparam DONE = 3'd4;
+    localparam CALC_START = 3'd3;
+    localparam CALC_END = 3'd4;
+    localparam GEN_NUMBERS = 3'd5;
+    localparam DONE = 3'd6;
         
     localparam LENGTH = 34;
 
@@ -90,20 +92,22 @@ module gift_shop_part1(
                     end
                 end
                 CALC_BOUNDS: begin
-                    current_p10 = get_p10(power_idx);  
-                    next_p10 = get_p10(power_idx) * 10;
-                    
-                    mul_const <= current_p10 + 1;      
-                    
-                    natural_min = get_p10(power_idx-1); 
-                    natural_max = current_p10 - 1; 
-
+                    current_p10 <= get_p10(power_idx);  
+                    next_p10 <= get_p10(power_idx) * 10;
+                    mul_const <= get_p10(power_idx) + 1;      
+                    natural_min <= get_p10(power_idx-1); 
+                    natural_max <= get_p10(power_idx) - 1; 
+                    state <= CALC_START;
+                end
+                CALC_START: begin
                     start_candidate = range_start / current_p10;
                     if (start_candidate < natural_min) 
                         half_iter <= natural_min;
                     else 
                         half_iter <= start_candidate;
-
+                    state <= CALC_END;
+                end 
+                CALC_END: begin
                     end_candidate = range_end / current_p10;
                     if (end_candidate < natural_max) 
                         half_max <= end_candidate;

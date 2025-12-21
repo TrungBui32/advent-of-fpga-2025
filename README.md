@@ -26,7 +26,7 @@ make
 - **Part 2**: 
 
 ### Day 2: [Gift Shop](https://adventofcode.com/2025/day/2)
-- **Part 1**: 
+- **Part 1**: this solution takes advantage of the fact that all the input ranges have start and end numbers with roughly the same number of digits, they never differ by more than one digit (which tbh helps me saving a lot of effort to address that case =). Instead of doing expensive division and modulo operations in hardware, I use binary-coded decimal (BCD) where each digit takes exactly 4 bits, making it easy to grab individual digits through bit-shifting. The main idea is to split each number in half and work with just the first half, I count from the start's first half to the end's first half, sum them up, then multiply by the right power of 10 (using shifts instead of actual multiplication since shifting is way faster, but the trade-off is a few more cycles). After that, I add the sum again to account for the second half. I also check the second halves of the start and end numbers to adjust the boundaries if needed like if the start number's second half is bigger than its first half, I bump up the first half by one. Actually, using shifts instead of multiply saves about 0.2 ns in the hardware implementation.
 - **Part 2**: 
 
 ### Day 3: [Lobby](https://adventofcode.com/2025/day/3)

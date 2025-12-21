@@ -10,10 +10,9 @@ module gift_shop_part1(
     localparam NORMALIZE = 4'd2;
     localparam CALC_START_END = 4'd3;
     localparam SUM = 4'd4;
-    localparam MULTIPLY_1 = 4'd5;
-    localparam MULTIPLY_2 = 4'd6;
-    localparam SHIFTING = 4'd7;
-    localparam DONE = 4'd8;
+    localparam MULTIPLY = 4'd5;
+    localparam SHIFTING = 4'd6;
+    localparam DONE = 4'd7;
         
     localparam LENGTH = 34;
     localparam HEX_LENGTH = 40;
@@ -165,13 +164,13 @@ module gift_shop_part1(
                             addition <= (half_start + half_end) >> 1;
                             mul_const <= (half_end - half_start) >> 1;
                         end
-                        state <= MULTIPLY_1;
+                        state <= MULTIPLY;
                     end else begin 
                         state <= LOAD_RANGE;
                         table_idx <= table_idx + 1;
                     end 
                 end
-                MULTIPLY_1: begin
+                MULTIPLY: begin
                     temp_sum <= mul_const*sum_const + addition;
                     temp_temp_sum <= mul_const*sum_const + addition;
                     state <= SHIFTING;

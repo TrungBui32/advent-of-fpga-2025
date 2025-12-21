@@ -111,7 +111,7 @@ module gift_shop_part1(
                     end else if(start_len[0] == 1'b1 || end_len[0] == 1'b1) begin
                         if(start_len[0] == 1'b1) begin
                             start_len <= start_len + 1;
-                            range_start <= 40'h1 << (start_len * 4);
+                            range_start <= 40'h1 << (start_len << 2);
                             iter <= start_len + 1;
                         end
                         if(end_len[0] == 1'b1) begin 
@@ -131,10 +131,10 @@ module gift_shop_part1(
                 end
                 CALC_START_END: begin
                     if(iter > start_len /2) begin
-                        half_start <= half_start*10 + range_start[iter*4 - 1 -: 4];
-                        half_end <= half_end*10 + range_end[iter*4 - 1 -: 4];
-                        second_half_start <= second_half_start*10 + range_start[(iter - start_len /2)*4 - 1 -: 4];
-                        second_half_end <= second_half_end*10 + range_end[(iter - start_len /2)*4 - 1 -: 4];
+                        half_start <= (half_start << 3) + (half_start << 1) + range_start[(iter << 2) - 1 -: 4];
+                        half_end <= (half_end << 3) + (half_end << 1) + range_end[(iter << 2) - 1 -: 4];
+                        second_half_start <= (second_half_start << 3) + (second_half_start << 1) + range_start[((iter - start_len /2) << 2) - 1 -: 4];
+                        second_half_end <= (second_half_end << 3) + (second_half_end << 1) + range_end[((iter - start_len /2) << 2) - 1 -: 4];
                         iter <= iter - 1;
                     end else begin
                         if(second_half_start > half_start) begin
@@ -160,7 +160,7 @@ module gift_shop_part1(
                 SHIFTING: begin
                     if(iter < half_len) begin
                         iter <= iter + 1;
-                        temp_sum <= temp_sum*10;
+                        temp_sum <= (temp_sum << 3) + (temp_sum << 1);
                     end else begin
                         state <= CHECK;
                     end

@@ -130,11 +130,11 @@ module gift_shop_part1(
                     second_half_end <= 0;
                 end
                 CALC_START_END: begin
-                    if(iter > start_len /2) begin
+                    if(iter > start_len >> 1) begin
                         half_start <= (half_start << 3) + (half_start << 1) + range_start[(iter << 2) - 1 -: 4];
                         half_end <= (half_end << 3) + (half_end << 1) + range_end[(iter << 2) - 1 -: 4];
-                        second_half_start <= (second_half_start << 3) + (second_half_start << 1) + range_start[((iter - start_len /2) << 2) - 1 -: 4];
-                        second_half_end <= (second_half_end << 3) + (second_half_end << 1) + range_end[((iter - start_len /2) << 2) - 1 -: 4];
+                        second_half_start <= (second_half_start << 3) + (second_half_start << 1) + range_start[((iter - (start_len >> 1)) << 2) - 1 -: 4];
+                        second_half_end <= (second_half_end << 3) + (second_half_end << 1) + range_end[((iter - (start_len >> 1)) << 2) - 1 -: 4];
                         iter <= iter - 1;
                     end else begin
                         if(second_half_start > half_start) begin

@@ -3,21 +3,22 @@ module gift_shop_part1(
     input rst,
     input start,
     output reg finished,
-    output reg [63:0] result
+    output reg [35:0] result
 );
-    localparam IDLE = 3'd0;
-    localparam LOAD_RANGE = 3'd1;
-    localparam NORMALIZE = 3'd2;
-    localparam CALC_START_END = 3'd3;
-    localparam GEN_NUMBERS = 3'd4;
-    localparam SHIFTING = 3'd5;
-    localparam CHECK = 3'd6;
-    localparam DONE = 3'd7;
+    localparam IDLE = 4'd0;
+    localparam LOAD_RANGE = 4'd1;
+    localparam NORMALIZE = 4'd2;
+    localparam CALC_START_END = 4'd3;
+    localparam SUM = 4'd4;
+    localparam MULTIPLY_1 = 4'd5;
+    localparam MULTIPLY_2 = 4'd6;
+    localparam SHIFTING = 4'd7;
+    localparam DONE = 4'd8;
         
     localparam LENGTH = 34;
     localparam HEX_LENGTH = 40;
 
-    reg [2:0] state;
+    reg [3:0] state;
     reg [HEX_LENGTH-1:0] table_1 [0:LENGTH-1]; 
     reg [HEX_LENGTH-1:0] table_2 [0:LENGTH-1]; 
     
@@ -28,15 +29,20 @@ module gift_shop_part1(
     reg [31:0] start_len;
     reg [31:0] end_len;
     reg [31:0] half_len;
-    reg [63:0] half_start;
-    reg [63:0] second_half_start;
-    reg [63:0] second_half_end;
-    reg [63:0] half_end;
+    reg [35:0] half_start;
+    reg [35:0] second_half_start;
+    reg [35:0] second_half_end;
+    reg [35:0] half_end;
     reg [31:0] iter;
 
-    reg [63:0] sum;
-    reg [63:0] temp_sum;
-    reg [63:0] temp_temp_sum;       // lol 
+    reg [35:0] sum;
+    reg [35:0] temp_sum;
+    reg [35:0] temp_temp_sum;       // lol 
+
+    reg [35:0] mul_const;
+    reg [35:0] sum_const;
+    reg [35:0] sub_const;
+    reg [35:0] addition;
 
     initial begin
         $readmemh("table_1.mem", table_1);
@@ -144,33 +150,43 @@ module gift_shop_part1(
                             half_end <= half_end - 1;
                         end
                         half_len <= start_len >> 1;
-                        state <= GEN_NUMBERS;
+                        state <= SUM;
                         iter <= 0;
                     end
                 end
-                GEN_NUMBERS: begin
-                    if(half_start <= half_end) begin
-                        temp_sum <= temp_sum + half_start;
-                        half_start <= half_start + 1;
-                    end else begin
-                        state <= SHIFTING;
-                        temp_temp_sum <= temp_sum;
-                    end
+                SUM: begin
+                    if(half_end >= half_start) begin
+                        sum_const <= half_start + half_end;
+                        sub_const = half_end - half_start;
+                        if(sub_const[0]) begin
+                            addition <= 0;
+                            mul_const <= ((half_end - half_start) >> 1) + 1;
+                        end else begin
+                            addition <= (half_start + half_end) >> 1;
+                            mul_const <= (half_end - half_start) >> 1;
+                        end
+                        state <= MULTIPLY_1;
+                    end else begin 
+                        state <= LOAD_RANGE;
+                        table_idx <= table_idx + 1;
+                    end 
+                end
+                MULTIPLY_1: begin
+                    temp_sum <= mul_const*sum_const + addition;
+                    temp_temp_sum <= mul_const*sum_const + addition;
+                    state <= SHIFTING;
                 end
                 SHIFTING: begin
                     if(iter < half_len) begin
                         iter <= iter + 1;
                         temp_sum <= (temp_sum << 3) + (temp_sum << 1);
                     end else begin
-                        state <= CHECK;
+                        sum <= sum + temp_sum + temp_temp_sum;
+                        temp_sum <= 0;
+                        temp_temp_sum <= 0;
+                        table_idx <= table_idx + 1;
+                        state <= LOAD_RANGE;
                     end
-                end
-                CHECK: begin
-                    sum <= sum + temp_sum + temp_temp_sum;
-                    temp_sum <= 0;
-                    temp_temp_sum <= 0;
-                    table_idx <= table_idx + 1;
-                    state <= LOAD_RANGE;
                 end
                 DONE: begin
                     finished <= 1'b1;

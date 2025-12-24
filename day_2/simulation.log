@@ -1,0 +1,752 @@
+nohup: ignoring input
+rm -f results.xml
+"make" -f Makefile results.xml
+make[1]: Entering directory '/home/trungbui/advent-of-fpga-2025/day_2'
+/usr/bin/iverilog -o sim_build/sim.vvp -D COCOTB_SIM=1 -s gift_shop_part2 -g2012 -f sim_build/cmds.f  gift_shop_part2.v
+rm -f results.xml
+MODULE=test_day_2 TESTCASE= TOPLEVEL=gift_shop_part2 TOPLEVEL_LANG=verilog \
+         /usr/bin/vvp -M /home/trungbui/.local/lib/python3.10/site-packages/cocotb/libs -m libcocotbvpi_icarus   sim_build/sim.vvp  
+     -.--ns INFO     gpi                                ..mbed/gpi_embed.cpp:79   in set_program_name_in_venv        Did not detect Python virtual environment. Using system-wide Python interpreter
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:101  in gpi_print_registered_impl       VPI registered
+     0.00ns INFO     cocotb                             Running on Icarus Verilog version 11.0 (stable)
+     0.00ns INFO     cocotb                             Running tests with cocotb v1.9.2 from /home/trungbui/.local/lib/python3.10/site-packages/cocotb
+     0.00ns INFO     cocotb                             Seeding Python random module with 1766544008
+     0.00ns INFO     cocotb.regression                  Found test test_day_2.test
+     0.00ns INFO     cocotb.regression                  running test (1/1)
+ 
+LOAD_RANGE
+range_start: 11
+range_end: 22
+start_len: 2
+end_len: 2
+SPLIT_RANGE
+Don't split
+CALC_DIVISOR
+divisor_array: 1
+num_divisor_iter: 1
+CHOOSE_DIVISOR
+current_divisor: 1
+dup: 2
+NORMALIZE
+note_start: 0
+note_end: 0
+CALC_START_END
+half_start: 1
+half_end: 2
+SUM
+sum_const: 3
+mul_const: 1
+addition: 0
+MULTIPLY
+temp_sum: 3
+SHIFTING
+temp_sum: 3
+sum: 0
+temp_sum: 30
+temp_temp_sum: 3
+sum: 33
+CHOOSE_DIVISOR
+ 
+LOAD_RANGE
+range_start: 95
+range_end: 115
+start_len: 2
+end_len: 3
+SPLIT_RANGE
+Splitting: processing [95, 115] (len=2)
+CALC_DIVISOR
+divisor_array: 1
+num_divisor_iter: 1
+CHOOSE_DIVISOR
+current_divisor: 1
+dup: 2
+NORMALIZE
+note_start: 0
+note_end: 0
+CALC_START_END
+half_start: 9
+half_end: 9
+SUM
+sum_const: 18
+mul_const: 0
+addition: 9
+MULTIPLY
+temp_sum: 9
+SHIFTING
+temp_sum: 9
+sum: 33
+temp_sum: 90
+temp_temp_sum: 9
+sum: 99
+CHOOSE_DIVISOR
+ 
+LOAD_RANGE
+range_start: 100
+range_end: 115
+start_len: 3
+end_len: 3
+SPLIT_RANGE
+Don't split
+CALC_DIVISOR
+divisor_array: 1
+num_divisor_iter: 1
+CHOOSE_DIVISOR
+current_divisor: 1
+dup: 3
+NORMALIZE
+note_start: 0
+note_end: 0
+CALC_START_END
+half_start: 1
+half_end: 1
+SUM
+sum_const: 2
+mul_const: 0
+addition: 1
+MULTIPLY
+temp_sum: 1
+SHIFTING
+temp_sum: 1
+sum: 132
+temp_sum: 10
+temp_temp_sum: 1
+sum: 132
+temp_sum: 110
+temp_temp_sum: 1
+sum: 111
+CHOOSE_DIVISOR
+ 
+LOAD_RANGE
+range_start: 998
+range_end: 1012
+start_len: 3
+end_len: 4
+SPLIT_RANGE
+Splitting: processing [998, 1012] (len=3)
+CALC_DIVISOR
+divisor_array: 1
+num_divisor_iter: 1
+CHOOSE_DIVISOR
+current_divisor: 1
+dup: 3
+NORMALIZE
+note_start: 0
+note_end: 0
+CALC_START_END
+half_start: 9
+half_end: 9
+SUM
+sum_const: 18
+mul_const: 0
+addition: 9
+MULTIPLY
+temp_sum: 9
+SHIFTING
+temp_sum: 9
+sum: 243
+temp_sum: 90
+temp_temp_sum: 9
+sum: 243
+temp_sum: 990
+temp_temp_sum: 9
+sum: 999
+CHOOSE_DIVISOR
+ 
+LOAD_RANGE
+range_start: 1000
+range_end: 1012
+start_len: 4
+end_len: 4
+SPLIT_RANGE
+Don't split
+CALC_DIVISOR
+divisor_array: 21
+num_divisor_iter: 2
+CHOOSE_DIVISOR
+current_divisor: 2
+dup: 2
+NORMALIZE
+note_start: 0
+note_end: 0
+CALC_START_END
+half_start: 10
+half_end: 10
+SUM
+sum_const: 20
+mul_const: 0
+addition: 10
+MULTIPLY
+temp_sum: 10
+SHIFTING
+temp_sum: 10
+sum: 1242
+temp_sum: 1000
+temp_temp_sum: 10
+sum: 1010
+CHOOSE_DIVISOR
+current_divisor: 1
+dup: 4
+NORMALIZE
+note_start: 0
+note_end: 0
+CALC_START_END
+half_start: 1
+half_end: 1
+SUM
+sum_const: 2
+mul_const: 0
+addition: 1
+MULTIPLY
+temp_sum: 1
+SHIFTING
+temp_sum: 1
+sum: 2252
+temp_sum: 10
+temp_temp_sum: 1
+sum: 2252
+temp_sum: 110
+temp_temp_sum: 1
+sum: 2252
+temp_sum: 1110
+temp_temp_sum: 1
+sum: 1111
+CHOOSE_DIVISOR
+ 
+LOAD_RANGE
+range_start: 1188511880
+range_end: 1188511890
+start_len: 10
+end_len: 10
+SPLIT_RANGE
+Don't split
+CALC_DIVISOR
+divisor_array: 521
+num_divisor_iter: 3
+CHOOSE_DIVISOR
+current_divisor: 5
+dup: 2
+NORMALIZE
+note_start: 0
+note_end: 0
+CALC_START_END
+half_start: 11885
+half_end: 11885
+SUM
+sum_const: 23770
+mul_const: 0
+addition: 11885
+MULTIPLY
+temp_sum: 11885
+SHIFTING
+temp_sum: 11885
+sum: 3363
+temp_sum: 1188500000
+temp_temp_sum: 11885
+sum: 1188511885
+CHOOSE_DIVISOR
+current_divisor: 2
+dup: 5
+NORMALIZE
+note_start: 0
+note_end: 0
+CALC_START_END
+half_start: 11
+half_end: 11
+SUM
+sum_const: 22
+mul_const: 0
+addition: 11
+MULTIPLY
+temp_sum: 11
+SHIFTING
+temp_sum: 11
+sum: 1188515248
+temp_sum: 1100
+temp_temp_sum: 11
+sum: 1188515248
+temp_sum: 111100
+temp_temp_sum: 11
+sum: 1188515248
+temp_sum: 11111100
+temp_temp_sum: 11
+sum: 1188515248
+temp_sum: 1111111100
+temp_temp_sum: 11
+sum: 1111111111
+CHOOSE_DIVISOR
+current_divisor: 1
+dup: 10
+NORMALIZE
+note_start: 0
+note_end: 0
+CALC_START_END
+half_start: 1
+half_end: 1
+SUM
+sum_const: 2
+mul_const: 0
+addition: 1
+MULTIPLY
+temp_sum: 1
+SHIFTING
+temp_sum: 1
+sum: 2299626359
+temp_sum: 10
+temp_temp_sum: 1
+sum: 2299626359
+temp_sum: 110
+temp_temp_sum: 1
+sum: 2299626359
+temp_sum: 1110
+temp_temp_sum: 1
+sum: 2299626359
+temp_sum: 11110
+temp_temp_sum: 1
+sum: 2299626359
+temp_sum: 111110
+temp_temp_sum: 1
+sum: 2299626359
+temp_sum: 1111110
+temp_temp_sum: 1
+sum: 2299626359
+temp_sum: 11111110
+temp_temp_sum: 1
+sum: 2299626359
+temp_sum: 111111110
+temp_temp_sum: 1
+sum: 2299626359
+temp_sum: 1111111110
+temp_temp_sum: 1
+sum: 1111111111
+CHOOSE_DIVISOR
+ 
+LOAD_RANGE
+range_start: 222220
+range_end: 222224
+start_len: 6
+end_len: 6
+SPLIT_RANGE
+Don't split
+CALC_DIVISOR
+divisor_array: 321
+num_divisor_iter: 3
+CHOOSE_DIVISOR
+current_divisor: 3
+dup: 2
+NORMALIZE
+note_start: 0
+note_end: 0
+CALC_START_END
+half_start: 222
+half_end: 222
+SUM
+sum_const: 444
+mul_const: 0
+addition: 222
+MULTIPLY
+temp_sum: 222
+SHIFTING
+temp_sum: 222
+sum: 3410737470
+temp_sum: 222000
+temp_temp_sum: 222
+sum: 222222
+CHOOSE_DIVISOR
+current_divisor: 2
+dup: 3
+NORMALIZE
+note_start: 0
+note_end: 0
+CALC_START_END
+half_start: 22
+half_end: 22
+SUM
+sum_const: 44
+mul_const: 0
+addition: 22
+MULTIPLY
+temp_sum: 22
+SHIFTING
+temp_sum: 22
+sum: 3410959692
+temp_sum: 2200
+temp_temp_sum: 22
+sum: 3410959692
+temp_sum: 222200
+temp_temp_sum: 22
+sum: 222222
+CHOOSE_DIVISOR
+current_divisor: 1
+dup: 6
+NORMALIZE
+note_start: 0
+note_end: 0
+CALC_START_END
+half_start: 2
+half_end: 2
+SUM
+sum_const: 4
+mul_const: 0
+addition: 2
+MULTIPLY
+temp_sum: 2
+SHIFTING
+temp_sum: 2
+sum: 3411181914
+temp_sum: 20
+temp_temp_sum: 2
+sum: 3411181914
+temp_sum: 220
+temp_temp_sum: 2
+sum: 3411181914
+temp_sum: 2220
+temp_temp_sum: 2
+sum: 3411181914
+temp_sum: 22220
+temp_temp_sum: 2
+sum: 3411181914
+temp_sum: 222220
+temp_temp_sum: 2
+sum: 222222
+CHOOSE_DIVISOR
+ 
+LOAD_RANGE
+range_start: 1698522
+range_end: 1698528
+start_len: 7
+end_len: 7
+SPLIT_RANGE
+Don't split
+CALC_DIVISOR
+divisor_array: 1
+num_divisor_iter: 1
+CHOOSE_DIVISOR
+current_divisor: 1
+dup: 7
+NORMALIZE
+note_start: 1
+note_end: 0
+CALC_START_END
+half_start: 2
+half_end: 1
+SUM
+ 
+LOAD_RANGE
+range_start: 446443
+range_end: 446449
+start_len: 6
+end_len: 6
+SPLIT_RANGE
+Don't split
+CALC_DIVISOR
+divisor_array: 321
+num_divisor_iter: 3
+CHOOSE_DIVISOR
+current_divisor: 3
+dup: 2
+NORMALIZE
+note_start: 0
+note_end: 0
+CALC_START_END
+half_start: 446
+half_end: 446
+SUM
+sum_const: 892
+mul_const: 0
+addition: 446
+MULTIPLY
+temp_sum: 446
+SHIFTING
+temp_sum: 446
+sum: 3411404136
+temp_sum: 446000
+temp_temp_sum: 446
+sum: 446446
+CHOOSE_DIVISOR
+current_divisor: 2
+dup: 3
+NORMALIZE
+note_start: 0
+note_end: 0
+CALC_START_END
+half_start: 44
+half_end: 44
+SUM
+sum_const: 88
+mul_const: 0
+addition: 44
+MULTIPLY
+temp_sum: 44
+SHIFTING
+temp_sum: 44
+sum: 3411850582
+temp_sum: 4400
+temp_temp_sum: 44
+sum: 3411850582
+temp_sum: 444400
+temp_temp_sum: 44
+sum: 444444
+CHOOSE_DIVISOR
+current_divisor: 1
+dup: 6
+NORMALIZE
+note_start: 0
+note_end: 0
+CALC_START_END
+half_start: 4
+half_end: 4
+SUM
+sum_const: 8
+mul_const: 0
+addition: 4
+MULTIPLY
+temp_sum: 4
+SHIFTING
+temp_sum: 4
+sum: 3412295026
+temp_sum: 40
+temp_temp_sum: 4
+sum: 3412295026
+temp_sum: 440
+temp_temp_sum: 4
+sum: 3412295026
+temp_sum: 4440
+temp_temp_sum: 4
+sum: 3412295026
+temp_sum: 44440
+temp_temp_sum: 4
+sum: 3412295026
+temp_sum: 444440
+temp_temp_sum: 4
+sum: 444444
+CHOOSE_DIVISOR
+ 
+LOAD_RANGE
+range_start: 38593856
+range_end: 38593862
+start_len: 8
+end_len: 8
+SPLIT_RANGE
+Don't split
+CALC_DIVISOR
+divisor_array: 421
+num_divisor_iter: 3
+CHOOSE_DIVISOR
+current_divisor: 4
+dup: 2
+NORMALIZE
+note_start: 0
+note_end: 0
+CALC_START_END
+half_start: 3859
+half_end: 3859
+SUM
+sum_const: 7718
+mul_const: 0
+addition: 3859
+MULTIPLY
+temp_sum: 3859
+SHIFTING
+temp_sum: 3859
+sum: 3412739470
+temp_sum: 38590000
+temp_temp_sum: 3859
+sum: 38593859
+CHOOSE_DIVISOR
+current_divisor: 2
+dup: 4
+NORMALIZE
+note_start: 0
+note_end: 0
+CALC_START_END
+half_start: 38
+half_end: 38
+SUM
+sum_const: 76
+mul_const: 0
+addition: 38
+MULTIPLY
+temp_sum: 38
+SHIFTING
+temp_sum: 38
+sum: 3451333329
+temp_sum: 3800
+temp_temp_sum: 38
+sum: 3451333329
+temp_sum: 383800
+temp_temp_sum: 38
+sum: 3451333329
+temp_sum: 38383800
+temp_temp_sum: 38
+sum: 38383838
+CHOOSE_DIVISOR
+current_divisor: 1
+dup: 8
+NORMALIZE
+note_start: 0
+note_end: 0
+CALC_START_END
+half_start: 3
+half_end: 3
+SUM
+sum_const: 6
+mul_const: 0
+addition: 3
+MULTIPLY
+temp_sum: 3
+SHIFTING
+temp_sum: 3
+sum: 3489717167
+temp_sum: 30
+temp_temp_sum: 3
+sum: 3489717167
+temp_sum: 330
+temp_temp_sum: 3
+sum: 3489717167
+temp_sum: 3330
+temp_temp_sum: 3
+sum: 3489717167
+temp_sum: 33330
+temp_temp_sum: 3
+sum: 3489717167
+temp_sum: 333330
+temp_temp_sum: 3
+sum: 3489717167
+temp_sum: 3333330
+temp_temp_sum: 3
+sum: 3489717167
+temp_sum: 33333330
+temp_temp_sum: 3
+sum: 33333333
+CHOOSE_DIVISFinal result: 5236764212
+  3640.00ns INFO     cocotb.regression                  test passed
+  3640.00ns INFO     cocotb.regression                  **************************************************************************************
+                                                        ** TEST                          STATUS  SIM TIME (ns)  REAL TIME (s)  RATIO (ns/s) **
+                                                        **************************************************************************************
+                                                        ** test_day_2.test                PASS        3640.00           0.05      76998.93  **
+                                                        **************************************************************************************
+                                                        ** TESTS=1 PASS=1 FAIL=0 SKIP=0               3640.00           0.47       7695.69  **
+                                                        **************************************************************************************
+                                                        
+OR
+ 
+LOAD_RANGE
+range_start: 565653
+range_end: 565659
+start_len: 6
+end_len: 6
+SPLIT_RANGE
+Don't split
+CALC_DIVISOR
+divisor_array: 321
+num_divisor_iter: 3
+CHOOSE_DIVISOR
+current_divisor: 3
+dup: 2
+NORMALIZE
+note_start: 1
+note_end: 0
+CALC_START_END
+half_start: 566
+half_end: 565
+SUM
+ 
+LOAD_RANGE
+range_start: 824824821
+range_end: 824824827
+start_len: 9
+end_len: 9
+SPLIT_RANGE
+Don't split
+CALC_DIVISOR
+divisor_array: 31
+num_divisor_iter: 2
+CHOOSE_DIVISOR
+current_divisor: 3
+dup: 3
+NORMALIZE
+note_start: 0
+note_end: 0
+CALC_START_END
+half_start: 824
+half_end: 824
+SUM
+sum_const: 1648
+mul_const: 0
+addition: 824
+MULTIPLY
+temp_sum: 824
+SHIFTING
+temp_sum: 824
+sum: 3523050500
+temp_sum: 824000
+temp_temp_sum: 824
+sum: 3523050500
+temp_sum: 824824000
+temp_temp_sum: 824
+sum: 824824824
+CHOOSE_DIVISOR
+current_divisor: 1
+dup: 9
+NORMALIZE
+note_start: 0
+note_end: 0
+CALC_START_END
+half_start: 8
+half_end: 8
+SUM
+sum_const: 16
+mul_const: 0
+addition: 8
+MULTIPLY
+temp_sum: 8
+SHIFTING
+temp_sum: 8
+sum: 4347875324
+temp_sum: 80
+temp_temp_sum: 8
+sum: 4347875324
+temp_sum: 880
+temp_temp_sum: 8
+sum: 4347875324
+temp_sum: 8880
+temp_temp_sum: 8
+sum: 4347875324
+temp_sum: 88880
+temp_temp_sum: 8
+sum: 4347875324
+temp_sum: 888880
+temp_temp_sum: 8
+sum: 4347875324
+temp_sum: 8888880
+temp_temp_sum: 8
+sum: 4347875324
+temp_sum: 88888880
+temp_temp_sum: 8
+sum: 4347875324
+temp_sum: 888888880
+temp_temp_sum: 8
+sum: 888888888
+CHOOSE_DIVISOR
+ 
+LOAD_RANGE
+range_start: 2121212118
+range_end: 2121212124
+start_len: 10
+end_len: 10
+SPLIT_RANGE
+Don't split
+CALC_DIVISOR
+divisor_array: 521
+num_divisor_iter: 3
+CHOOSE_DIVISOR
+current_divisor: 5
+dup: 2
+NORMALIZE
+note_start: 0
+note_end: 1
+CALC_START_END
+half_start: 21212
+half_end: 21211
+SUM
+make[1]: Leaving directory '/home/trungbui/advent-of-fpga-2025/day_2'

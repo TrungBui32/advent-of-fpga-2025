@@ -14,22 +14,14 @@ module laboratories_part1(
     localparam DONE = 3'd2;
 
     reg [WIDTH-1:0] map [0:HEIGHT-1];
-    reg [WIDTH-1:0] path [0:HEIGHT-1];
+    reg [WIDTH-1:0] current_path;
+    reg [WIDTH-1:0] previous_path;
 
     reg [31:0] sum;
     
     integer i, j;
     initial begin
         $readmemb("input.mem", map);
-        for(i = 0; i < HEIGHT; i = i + 1) begin
-            for(j = 0; j < WIDTH; j = j + 1) begin
-                if(i == 0 && j == MIDDLE) begin
-                    path[i][j] = 1;
-                end else begin 
-                    path[i][j] = 0;
-                end
-            end
-        end
     end 
 
     reg [7:0] y;
@@ -43,6 +35,8 @@ module laboratories_part1(
             result <= 0;
             finished <= 0;
             state <= IDLE;
+            previous_path <= {WIDTH{1'b0}};
+            current_path <= {WIDTH{1'b0}};
         end else begin
             case(state)
                 IDLE: begin
@@ -50,22 +44,28 @@ module laboratories_part1(
                         state <= RUNNING;
                         y <= 1;
                         sum <= 0;
+                        previous_path <= {WIDTH{1'b0}};
+                        previous_path[MIDDLE] <= 1'b1;
+                        current_path <= {WIDTH{1'b0}};
                     end
                 end
                 RUNNING: begin
                     for(x = 0; x < WIDTH; x = x + 1) begin
-                        if(path[y-1][x] == 1 && map[y][x] == 1) begin
+                        if(previous_path[x] && map[y][x]) begin
                             if(x > 0) begin
-                                path[y][x-1] <= 1;
+                                current_path[x-1] = 1'b1;
                             end
                             if(x + 1 < WIDTH) begin
-                                path[y][x+1] <= 1;
+                                current_path[x+1] = 1'b1;
                             end
                             sum = sum + 1;
-                        end  else if (path[y-1][x] == 1) begin
-                            path[y][x] <= 1;
+                        end  else if (previous_path[x]) begin
+                            current_path[x] = 1'b1;
                         end
                     end
+                    previous_path <= current_path;
+                    current_path <= {WIDTH{1'b0}};
+
                     if(y == HEIGHT - 1) begin
                         state <= DONE;
                     end else begin

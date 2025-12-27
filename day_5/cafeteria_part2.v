@@ -19,9 +19,12 @@ module cafeteria_part2(
     reg [NUM_RANGE-1:0] valid_range;
 
     reg [2:0] state;
-    reg [9:0] sort_iter;
     reg [9:0] i, j, k;
     reg [63:0] sum;
+
+    reg [7:0] sort_pass;
+    reg [7:0] sort_idx;
+    reg swapped;
 
     integer x, s;
 
@@ -38,7 +41,6 @@ module cafeteria_part2(
             finished <= 0;
             result <= 0;
             state <= IDLE;
-            sort_iter <= 0;
             i <= 0;
             j <= 0;
             k <= 0;
@@ -49,45 +51,48 @@ module cafeteria_part2(
                 IDLE: begin
                     if(start) begin
                         state <= SORT;
-                        sort_iter <= 0;
                         i <= 0;
                         j <= 1;
                         k <= 0;
                         sum <= 0;
+                        sort_idx <= 0;
+                        sort_pass <= 0;
                         valid_range <= {NUM_RANGE{1'b1}};
                     end
                 end
                 SORT: begin
-                    sort_iter <= sort_iter + 1;
-                    if (sort_iter < NUM_RANGE) begin
-                        if (sort_iter[0] == 1'b0) begin
-                            for (s = 0; s < NUM_RANGE-1; s = s + 2) begin
-                                if (start_range[s] > start_range[s+1]) begin
-                                    start_range[s] <= start_range[s+1];
-                                    start_range[s+1] <= start_range[s];
-                                    end_range[s] <= end_range[s+1];
-                                    end_range[s+1] <= end_range[s];
-                                end
+                    if (sort_pass < NUM_RANGE - 1) begin
+                        if(sort_idx == 0) begin
+                            swapped <= 0;
+                        end
+                        if (sort_idx < NUM_RANGE - 1 - sort_pass) begin  
+                            if (start_range[sort_idx] > start_range[sort_idx + 1]) begin
+                                start_range[sort_idx] <= start_range[sort_idx + 1];
+                                start_range[sort_idx + 1] <= start_range[sort_idx];
+                                end_range[sort_idx] <= end_range[sort_idx + 1];
+                                end_range[sort_idx + 1] <= end_range[sort_idx];
+                                swapped <= 1;
                             end
+                            sort_idx <= sort_idx + 1;
                         end else begin
-                            for (s = 1; s < NUM_RANGE-1; s = s + 2) begin
-                                if (start_range[s] > start_range[s+1]) begin
-                                    start_range[s] <= start_range[s+1];
-                                    start_range[s+1] <= start_range[s];
-                                    end_range[s] <= end_range[s+1];
-                                    end_range[s+1] <= end_range[s];
-                                end
+                            if(swapped == 0) begin
+                                state <= MERGE;
+                                i <= 0;
+                                j <= 1; 
+                            end else begin
+                                sort_idx <= 0;  
+                                sort_pass <= sort_pass + 1;
                             end
                         end
                     end else begin
                         state <= MERGE;
                         i <= 0;
-                        j <= 1;
+                        j <= 1; 
                     end
                 end
                 MERGE: begin
                     if (j < NUM_RANGE) begin
-                        if (start_range[j] <= end_range[i]) begin
+                        if (start_range[j] <= end_range[i] + 1) begin
                             if (end_range[j] > end_range[i]) begin
                                 end_range[i] <= end_range[j];
                             end

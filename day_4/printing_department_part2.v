@@ -8,70 +8,93 @@ module printing_department_part2(
 
     localparam WIDTH = 140;
     localparam HEIGHT = 140;
+    localparam NUM_CHUNKS = 5;
+    localparam CHUNK_SIZE = 28;
     
-    localparam IDLE = 3'd0;
-    localparam COUNT = 3'd1;
-    localparam PROCESS = 3'd2;
-    localparam CHECK = 3'd3;
-    localparam DONE = 3'd4;
+    localparam IDLE = 2'd0;
+    localparam PROCESS = 2'd1;
+    localparam CHECK = 2'd2;
+    localparam DONE = 2'd3;
 
-    reg [2:0] state;
+    reg [1:0] state;
 
-    reg [WIDTH-1:0] bank [0:HEIGHT-1];
+    (* ram_style = "block" *)  reg [WIDTH-1:0] bank [0:HEIGHT-1];
 
     reg [14:0] current_count;
-    reg [14:0] start_count;
-    reg [14:0] iteration_count;
+    reg [14:0] accessible_count;
     
     reg [7:0] row_idx; 
     reg diff_found_flag;
 
-    integer j;
-    integer x, y;
-
-    reg [WIDTH-1:0] row_n, row_c, row_s; 
+    reg [WIDTH-1:0] buffer_next_row_state;
     reg [WIDTH-1:0] next_row_state;
-    reg [7:0] row_pop_count; 
 
-    integer k;
     reg [7:0] r_sum; 
 
     initial begin
         $readmemb("input.mem", bank);
     end
 
-    reg n, s, w, e, nw, ne, sw, se;
-    reg [3:0] surrounded;
-    reg keep;
+    reg [WIDTH-1:0] row_n_r, row_c_r, row_s_r;
+    reg [7:0] stage_counts [0:NUM_CHUNKS-1];
+    reg [7:0] final_row_count;
+    reg [7:0] process_counter;
 
-    always @(*) begin
-        if (row_idx == 0) row_n = {WIDTH{1'b0}};
-        else row_n = bank[row_idx - 1];
+    always @(posedge clk) begin
+        if (state == PROCESS && row_idx < HEIGHT) begin
+            if (row_idx == 0) 
+                row_n_r <= {WIDTH{1'b0}};
+            else 
+                row_n_r <= bank[row_idx - 1];
+            
+            row_c_r <= bank[row_idx];
+            
+            if (row_idx == HEIGHT - 1) 
+                row_s_r <= {WIDTH{1'b0}};
+            else 
+                row_s_r <= bank[row_idx + 1];
+        end
+    end
 
-        row_c = bank[row_idx];
+    genvar g;
+    generate
+        for (g = 0; g < NUM_CHUNKS; g = g + 1) begin : chunk_gen
+            reg [3:0] chunk_count;
+            reg n, s, w, e, nw, ne, sw, se;
+            reg [3:0] surrounded;
+            integer k;
+            
+            always @(posedge clk) begin
+                chunk_count = 0;
+                
+                for (k = g * CHUNK_SIZE; k < (g + 1) * CHUNK_SIZE && k < WIDTH; k = k + 1) begin
+                    if (row_c_r[k]) begin
+                        n = row_n_r[k];
+                        s = row_s_r[k];
+                        w = (k == 0) ? 1'b0 : row_c_r[k-1];
+                        e = (k == WIDTH-1) ? 1'b0 : row_c_r[k+1];
+                        nw = (k == 0) ? 1'b0 : row_n_r[k-1];
+                        ne = (k == WIDTH-1) ? 1'b0 : row_n_r[k+1];
+                        sw = (k == 0) ? 1'b0 : row_s_r[k-1];
+                        se = (k == WIDTH-1) ? 1'b0 : row_s_r[k+1];
 
-        if (row_idx == HEIGHT - 1) row_s = {WIDTH{1'b0}};
-        else row_s = bank[row_idx + 1];
-
-        row_pop_count = 0;
-        
-        for (j = 0; j < WIDTH; j = j + 1) begin
-            n = row_n[j];
-            s = row_s[j];
-            w = (j == 0) ? 1'b0 : row_c[j-1];
-            e = (j == WIDTH-1) ? 1'b0 : row_c[j+1];
-            nw = (j == 0) ? 1'b0 : row_n[j-1];
-            ne = (j == WIDTH-1) ? 1'b0 : row_n[j+1];
-            sw = (j == 0) ? 1'b0 : row_s[j-1];
-            se = (j == WIDTH-1) ? 1'b0 : row_s[j+1];
-
-            surrounded = n + s + w + e + nw + ne + sw + se;
-            keep = (surrounded < 4) ? 1'b0 : 1'b1;
-            next_row_state[j] = row_c[j] & keep;
-            if (next_row_state[j]) begin
-                row_pop_count = row_pop_count + 1;
+                        surrounded = n + s + w + e + nw + ne + sw + se;
+                        buffer_next_row_state[k] <= (surrounded < 4) ? 1'b0 : 1'b1;
+                        if (surrounded < 4) begin
+                            chunk_count = chunk_count + 1;
+                        end
+                    end else begin
+                        buffer_next_row_state[k] <= row_c_r[k];
+                    end
+                end
+                stage_counts[g] <= chunk_count;
             end
         end
+    endgenerate
+
+    always @(posedge clk) begin
+        final_row_count <= stage_counts[0] + stage_counts[1] + stage_counts[2] + stage_counts[3] + stage_counts[4];
+        next_row_state <= buffer_next_row_state;
     end
 
     always @(posedge clk or posedge rst) begin
@@ -79,7 +102,6 @@ module printing_department_part2(
             finished <= 0;
             result <= 0;
             state <= IDLE;
-            start_count <= 0;
             current_count <= 0;
             row_idx <= 0;
             diff_found_flag <= 0;
@@ -87,57 +109,44 @@ module printing_department_part2(
             case(state)
                 IDLE: begin
                     if(start) begin
-                        start_count <= 0;
-                        state <= COUNT;
-                        row_idx <= 0;
-                        start_count <= 0;
-                    end
-                end
-                COUNT: begin
-                    r_sum = 0;
-                    for(k = 0; k < WIDTH; k = k + 1) begin
-                        if(bank[row_idx][k]) begin 
-                            r_sum = r_sum + 1;
-                        end
-                    end
-                    
-                    start_count <= start_count + r_sum;
-
-                    if(row_idx == HEIGHT-1) begin
                         state <= PROCESS;
                         row_idx <= 0;
-                        iteration_count <= 0;
+                        accessible_count <= 0;
                         diff_found_flag <= 0;
-                    end else begin
-                        row_idx <= row_idx + 1;
+                        process_counter <= 0;
                     end
                 end
                 PROCESS: begin
-                    bank[row_idx] <= next_row_state;
-                    iteration_count <= iteration_count + row_pop_count;
-                    if (bank[row_idx] != next_row_state) begin
-                        diff_found_flag <= 1;
+                    if (process_counter >= 3) begin
+                        accessible_count <= accessible_count + final_row_count;
+                        bank[process_counter-3] <= next_row_state;
+                        if (bank[process_counter-3] != next_row_state) begin
+                            diff_found_flag <= 1;
+                        end
                     end
-                    if (row_idx == HEIGHT - 1) begin
+
+                    if (process_counter >= HEIGHT + 2) begin
                         state <= CHECK;
                     end else begin
                         row_idx <= row_idx + 1;
+                        process_counter <= process_counter + 1;
                     end
                 end
                 CHECK: begin
-                    current_count <= iteration_count;
+                    current_count <= current_count + accessible_count;
                     
                     if (!diff_found_flag) begin
                         state <= DONE;
                     end else begin
                         state <= PROCESS;
                         row_idx <= 0;
-                        iteration_count <= 0;
+                        accessible_count <= 0;
                         diff_found_flag <= 0;
+                        process_counter <= 0;
                     end
                 end
                 DONE: begin
-                    result <= start_count - current_count;
+                    result <= current_count;
                     finished <= 1;
                 end
             endcase

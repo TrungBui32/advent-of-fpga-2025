@@ -25,14 +25,6 @@ module laboratories_part2(
     integer i, j;
     initial begin
         $readmemb("input.mem", map);
-        for(i = 0; i < WIDTH; i = i + 1) begin
-            if(i == MIDDLE) begin
-                current_path[i] = 1;
-            end else begin
-                current_path[i] = 0;
-            end
-            next_path[i] = 0;
-        end
     end 
 
     reg [7:0] y;
@@ -53,6 +45,14 @@ module laboratories_part2(
                         state <= RUNNING;
                         y <= 1;
                         sum <= 0;
+                        for(i = 0; i < WIDTH; i = i + 1) begin
+                            if(i == MIDDLE) begin
+                                current_path[i] = 1;
+                            end else begin
+                                current_path[i] = 0;
+                            end
+                            next_path[i] = 0;
+                        end
                     end
                 end
                 RUNNING: begin

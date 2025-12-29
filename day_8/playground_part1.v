@@ -33,11 +33,10 @@ module playground_part1(
     localparam IDLE = 4'd0;
     localparam CALC_DISTANCE = 4'd1;
     localparam INSERT_DISTANCE = 4'd2;
-    localparam SHIFT_ARRAY = 4'd3;
-    localparam CONNECT_BOX = 4'd4;
-    localparam MERGE_CIRCUITS = 4'd5;
-    localparam SCAN_CIRCUITS = 4'd6;
-    localparam DONE = 4'd7;
+    localparam CONNECT_BOX = 4'd3;
+    localparam MERGE_CIRCUITS = 4'd4;
+    localparam SCAN_CIRCUITS = 4'd5;
+    localparam DONE = 4'd6;
 
     reg [3:0] state;
     reg [31:0] current_i, current_j;
@@ -53,7 +52,6 @@ module playground_part1(
     reg [9:0] new_size;
     
     reg [31:0] insert_pos;
-    reg [31:0] shift_idx;
     reg found_pos;
     
     reg [31:0] merge_idx;
@@ -106,48 +104,45 @@ module playground_part1(
                                         (z[current_i] - z[current_j]) * (z[current_i] - z[current_j]);
                     state <= INSERT_DISTANCE;
                     found_pos <= 0;
-                    insert_pos <= 0;
+                    insert_pos <= num_stored;
                 end
                 
-                INSERT_DISTANCE: begin
-                    if (num_stored < NUM_LOOP || current_distance < min_distances[NUM_LOOP-1]) begin
-                        if (!found_pos) begin
-                            if (insert_pos >= num_stored || current_distance < min_distances[insert_pos]) begin
-                                found_pos <= 1;
-                                shift_idx <= NUM_LOOP - 1;
-                                state <= SHIFT_ARRAY;
-                            end else begin
-                                insert_pos <= insert_pos + 1;
+                INSERT_DISTANCE: begin                    
+                    if(!found_pos && insert_pos > 0) begin
+                        if(current_distance > min_distances[insert_pos-1]) begin
+                            found_pos <= 1;
+                            min_distances[insert_pos] <= current_distance;
+                            min_src[insert_pos] <= current_i;
+                            min_dst[insert_pos] <= current_j;
+
+                            if (num_stored < NUM_LOOP) begin
+                                num_stored <= num_stored + 1;
                             end
-                        end
-                    end else begin
-                        if (current_j == NUM_ELEMENT - 1) begin
-                            if (current_i == NUM_ELEMENT - 2) begin
-                                state <= CONNECT_BOX;
-                                loop_count <= 0;
+                        
+                            if (current_j == NUM_ELEMENT - 1) begin
+                                if (current_i == NUM_ELEMENT - 2) begin
+                                    state <= CONNECT_BOX;
+                                    loop_count <= 0;
+                                end else begin
+                                    current_j <= current_i + 2;
+                                    current_i <= current_i + 1;
+                                    state <= CALC_DISTANCE;
+                                end
                             end else begin
-                                current_j <= current_i + 2;
-                                current_i <= current_i + 1;
                                 state <= CALC_DISTANCE;
+                                current_j <= current_j + 1;
                             end
                         end else begin
-                            state <= CALC_DISTANCE;
-                            current_j <= current_j + 1;
+                            min_distances[insert_pos] <= min_distances[insert_pos-1];
+                            min_src[insert_pos] <= min_src[insert_pos-1];
+                            min_dst[insert_pos] <= min_dst[insert_pos-1];
+                            insert_pos <= insert_pos - 1;
                         end
-                    end
-                end
-                
-                SHIFT_ARRAY: begin
-                    if (shift_idx > insert_pos) begin
-                        min_distances[shift_idx] <= min_distances[shift_idx-1];
-                        min_src[shift_idx] <= min_src[shift_idx-1];
-                        min_dst[shift_idx] <= min_dst[shift_idx-1];
-                        shift_idx <= shift_idx - 1;
                     end else begin
-                        min_distances[insert_pos] <= current_distance;
-                        min_src[insert_pos] <= current_i;
-                        min_dst[insert_pos] <= current_j;
-                        
+                        min_distances[0] <= current_distance;
+                        min_src[0] <= current_i;
+                        min_dst[0] <= current_j;
+
                         if (num_stored < NUM_LOOP) begin
                             num_stored <= num_stored + 1;
                         end
@@ -166,8 +161,7 @@ module playground_part1(
                             current_j <= current_j + 1;
                         end
                     end
-                end
-                
+                end                
                 CONNECT_BOX: begin                    
                     src_circuit = circuit_id[min_src[loop_count]];
                     dst_circuit = circuit_id[min_dst[loop_count]];

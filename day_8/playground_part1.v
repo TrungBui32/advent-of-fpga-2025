@@ -248,17 +248,15 @@ module playground_part1(
                 end
                 SCAN_CIRCUITS: begin
                     if (scan_idx < next_circuit_id) begin
-                        if (circuit_size[scan_idx] > 0) begin
-                            if (circuit_size[scan_idx] > top1) begin
-                                top3 <= top2;
-                                top2 <= top1;
-                                top1 <= circuit_size[scan_idx];
-                            end else if (circuit_size[scan_idx] > top2) begin
-                                top3 <= top2;
-                                top2 <= circuit_size[scan_idx];
+                        if (circuit_size[scan_idx] > top1) begin
+                            top3 <= top2;
+                            top2 <= top1;
+                            top1 <= circuit_size[scan_idx];
+                        end else if (circuit_size[scan_idx] > top2) begin
+                            top3 <= top2;
+                            top2 <= circuit_size[scan_idx];
                             end else if (circuit_size[scan_idx] > top3) begin
-                                top3 <= circuit_size[scan_idx];
-                            end
+                            top3 <= circuit_size[scan_idx];
                         end
                         scan_idx <= scan_idx + 1;
                     end else begin

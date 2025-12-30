@@ -1,5 +1,5 @@
 TOPLEVEL_LANG = verilog
-VERILOG_SOURCES = playground_part1.v min5.v
+VERILOG_SOURCES = playground_part1.v
 TOPLEVEL = playground_part1
 MODULE = test_day_8
 

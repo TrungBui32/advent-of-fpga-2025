@@ -17,7 +17,7 @@ module playground_part1(
     reg [9:0] parent [0:NUM_ELEMENT-1];
     reg [9:0] size [0:NUM_ELEMENT-1];
 
-    reg [63:0] min_distances [0:NUM_LOOP-1];        // NUM_LOOP here is not logically correct but works lol
+    reg [63:0] min_distances [0:NUM_LOOP-1];       
     reg [9:0] min_src [0:NUM_LOOP-1];
     reg [9:0] min_dst [0:NUM_LOOP-1];
     
@@ -33,10 +33,12 @@ module playground_part1(
     localparam IDLE = 4'd0;
     localparam CALC_DISTANCE = 4'd1;
     localparam INSERT_DISTANCE = 4'd2;
-    localparam CONNECT_BOX = 4'd3;
-    localparam MERGE_CIRCUITS = 4'd4;
-    localparam SCAN_CIRCUITS = 4'd5;
-    localparam DONE = 4'd6;
+    localparam BUBBLE_UP = 4'd3;
+    localparam HEAPIFY_DOWN = 4'd4;
+    localparam CONNECT_BOX = 4'd5;
+    localparam MERGE_CIRCUITS = 4'd6;
+    localparam SCAN_CIRCUITS = 4'd7;
+    localparam DONE = 4'd8;
 
     reg [3:0] state;
     reg [31:0] current_i, current_j;
@@ -57,6 +59,11 @@ module playground_part1(
     reg [31:0] merge_idx;
     
     reg [31:0] scan_idx;
+
+    reg [31:0] bubble_idx;
+    reg [31:0] heapify_idx;
+    reg [31:0] parent_idx;
+    reg [31:0] left_child_idx, right_child_idx;
     
     integer i;
 
@@ -104,21 +111,18 @@ module playground_part1(
                                         (z[current_i] - z[current_j]) * (z[current_i] - z[current_j]);
                     state <= INSERT_DISTANCE;
                     found_pos <= 0;
-                    insert_pos <= num_stored;
                 end
                 
-                INSERT_DISTANCE: begin                    
-                    if(!found_pos && insert_pos > 0) begin
-                        if(current_distance > min_distances[insert_pos-1]) begin
-                            found_pos <= 1;
-                            min_distances[insert_pos] <= current_distance;
-                            min_src[insert_pos] <= current_i;
-                            min_dst[insert_pos] <= current_j;
-
-                            if (num_stored < NUM_LOOP) begin
-                                num_stored <= num_stored + 1;
-                            end
-                        
+                INSERT_DISTANCE: begin      
+                    if(num_stored < NUM_LOOP) begin
+                        min_distances[num_stored] <= current_distance;
+                        min_src[num_stored] <= current_i;
+                        min_dst[num_stored] <= current_j;
+                        num_stored <= num_stored + 1;
+                        bubble_idx <= num_stored;
+                        state <= BUBBLE_UP;
+                    end else begin
+                        if(current_distance > min_distances[0]) begin
                             if (current_j == NUM_ELEMENT - 1) begin
                                 if (current_i == NUM_ELEMENT - 2) begin
                                     state <= CONNECT_BOX;
@@ -133,20 +137,43 @@ module playground_part1(
                                 current_j <= current_j + 1;
                             end
                         end else begin
-                            min_distances[insert_pos] <= min_distances[insert_pos-1];
-                            min_src[insert_pos] <= min_src[insert_pos-1];
-                            min_dst[insert_pos] <= min_dst[insert_pos-1];
-                            insert_pos <= insert_pos - 1;
+                            min_distances[0] <= current_distance;
+                            min_src[0] <= current_i;
+                            min_dst[0] <= current_j;
+                            heapify_idx <= 0;
+                            state <= HEAPIFY_DOWN;
+                        end
+                    end
+                end
+                BUBBLE_UP: begin
+                    if(bubble_idx > 0) begin
+                        parent_idx = (bubble_idx - 1) >> 1;
+                        if(min_distances[parent_idx] < min_distances[bubble_idx]) begin
+                            min_distances[parent_idx] <= min_distances[bubble_idx];
+                            min_src[parent_idx] <= min_src[bubble_idx];
+                            min_dst[parent_idx] <= min_dst[bubble_idx];
+
+                            min_distances[bubble_idx] <= min_distances[parent_idx];
+                            min_src[bubble_idx] <= min_src[parent_idx];
+                            min_dst[bubble_idx] <= min_dst[parent_idx];
+
+                            bubble_idx <= parent_idx;
+                        end else begin
+                             if (current_j == NUM_ELEMENT - 1) begin
+                                if (current_i == NUM_ELEMENT - 2) begin
+                                    state <= CONNECT_BOX;
+                                    loop_count <= 0;
+                                end else begin
+                                    current_j <= current_i + 2;
+                                    current_i <= current_i + 1;
+                                    state <= CALC_DISTANCE;
+                                end
+                            end else begin
+                                state <= CALC_DISTANCE;
+                                current_j <= current_j + 1;
+                            end
                         end
                     end else begin
-                        min_distances[0] <= current_distance;
-                        min_src[0] <= current_i;
-                        min_dst[0] <= current_j;
-
-                        if (num_stored < NUM_LOOP) begin
-                            num_stored <= num_stored + 1;
-                        end
-                        
                         if (current_j == NUM_ELEMENT - 1) begin
                             if (current_i == NUM_ELEMENT - 2) begin
                                 state <= CONNECT_BOX;
@@ -161,11 +188,117 @@ module playground_part1(
                             current_j <= current_j + 1;
                         end
                     end
-                end                
-                CONNECT_BOX: begin                    
+                end
+                HEAPIFY_DOWN: begin
+                    left_child_idx = (heapify_idx << 1) + 1;
+                    right_child_idx = (heapify_idx << 1) + 2;
+                    if(left_child_idx < NUM_LOOP && right_child_idx < NUM_LOOP) begin
+                        if(min_distances[left_child_idx] > min_distances[right_child_idx] && min_distances[left_child_idx] > min_distances[heapify_idx]) begin
+                            min_distances[left_child_idx] <= min_distances[heapify_idx];
+                            min_src[left_child_idx] <= min_src[heapify_idx];
+                            min_dst[left_child_idx] <= min_dst[heapify_idx];
+
+                            min_distances[heapify_idx] <= min_distances[left_child_idx];
+                            min_src[heapify_idx] <= min_src[left_child_idx];
+                            min_dst[heapify_idx] <= min_dst[left_child_idx];
+
+                            heapify_idx <= left_child_idx;
+                        end else if(min_distances[right_child_idx] > min_distances[left_child_idx] && min_distances[right_child_idx] > min_distances[heapify_idx]) begin
+                            min_distances[right_child_idx] <= min_distances[heapify_idx];
+                            min_src[right_child_idx] <= min_src[heapify_idx];
+                            min_dst[right_child_idx] <= min_dst[heapify_idx];
+
+                            min_distances[heapify_idx] <= min_distances[right_child_idx];
+                            min_src[heapify_idx] <= min_src[right_child_idx];
+                            min_dst[heapify_idx] <= min_dst[right_child_idx];
+
+                            heapify_idx <= right_child_idx;
+                        end else begin
+                            if (current_j == NUM_ELEMENT - 1) begin
+                                if (current_i == NUM_ELEMENT - 2) begin
+                                    state <= CONNECT_BOX;
+                                    loop_count <= 0;
+                                end else begin
+                                    current_j <= current_i + 2;
+                                    current_i <= current_i + 1;
+                                    state <= CALC_DISTANCE;
+                                end
+                            end else begin
+                                state <= CALC_DISTANCE;
+                                current_j <= current_j + 1;
+                            end
+                        end
+                    end else if(left_child_idx < NUM_LOOP) begin
+                        if(min_distances[left_child_idx] > min_distances[heapify_idx]) begin
+                            min_distances[left_child_idx] <= min_distances[heapify_idx];
+                            min_src[left_child_idx] <= min_src[heapify_idx];
+                            min_dst[left_child_idx] <= min_dst[heapify_idx];
+
+                            min_distances[heapify_idx] <= min_distances[left_child_idx];
+                            min_src[heapify_idx] <= min_src[left_child_idx];
+                            min_dst[heapify_idx] <= min_dst[left_child_idx];
+
+                            heapify_idx <= left_child_idx;
+                        end else begin
+                            if (current_j == NUM_ELEMENT - 1) begin
+                                if (current_i == NUM_ELEMENT - 2) begin
+                                    state <= CONNECT_BOX;
+                                    loop_count <= 0;
+                                end else begin
+                                    current_j <= current_i + 2;
+                                    current_i <= current_i + 1;
+                                    state <= CALC_DISTANCE;
+                                end
+                            end else begin
+                                state <= CALC_DISTANCE;
+                                current_j <= current_j + 1;
+                            end
+                        end
+                    end else if(right_child_idx < NUM_LOOP) begin
+                        if(min_distances[right_child_idx] > min_distances[heapify_idx]) begin
+                            min_distances[right_child_idx] <= min_distances[heapify_idx];
+                            min_src[right_child_idx] <= min_src[heapify_idx];
+                            min_dst[right_child_idx] <= min_dst[heapify_idx];
+
+                            min_distances[heapify_idx] <= min_distances[right_child_idx];
+                            min_src[heapify_idx] <= min_src[right_child_idx];
+                            min_dst[heapify_idx] <= min_dst[right_child_idx];
+
+                            heapify_idx <= right_child_idx;
+                        end else begin
+                            if (current_j == NUM_ELEMENT - 1) begin
+                                if (current_i == NUM_ELEMENT - 2) begin
+                                    state <= CONNECT_BOX;
+                                    loop_count <= 0;
+                                end else begin
+                                    current_j <= current_i + 2;
+                                    current_i <= current_i + 1;
+                                    state <= CALC_DISTANCE;
+                                end
+                            end else begin
+                                state <= CALC_DISTANCE;
+                                current_j <= current_j + 1;
+                            end
+                        end
+                    end else begin
+                        if (current_j == NUM_ELEMENT - 1) begin
+                            if (current_i == NUM_ELEMENT - 2) begin
+                                state <= CONNECT_BOX;
+                                loop_count <= 0;
+                            end else begin
+                                current_j <= current_i + 2;
+                                current_i <= current_i + 1;
+                                state <= CALC_DISTANCE;
+                            end
+                        end else begin
+                            state <= CALC_DISTANCE;
+                            current_j <= current_j + 1;
+                        end
+                    end
+                end          
+                CONNECT_BOX: begin               
                     src_circuit = circuit_id[min_src[loop_count]];
                     dst_circuit = circuit_id[min_dst[loop_count]];
-                    
                     if (src_circuit == 10'd1023 && dst_circuit == 10'd1023) begin
                         circuit_id[min_src[loop_count]] <= next_circuit_id;
                         circuit_id[min_dst[loop_count]] <= next_circuit_id;
@@ -255,7 +388,7 @@ module playground_part1(
                         end else if (circuit_size[scan_idx] > top2) begin
                             top3 <= top2;
                             top2 <= circuit_size[scan_idx];
-                            end else if (circuit_size[scan_idx] > top3) begin
+                        end else if (circuit_size[scan_idx] > top3) begin
                             top3 <= circuit_size[scan_idx];
                         end
                         scan_idx <= scan_idx + 1;

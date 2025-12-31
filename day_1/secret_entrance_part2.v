@@ -2,83 +2,150 @@ module secret_entrance_part2(
     input clk,
     input rst,
     input start,
+    input valid_in,
+    input [10:0] operation,
+    output reg ready,
     output reg finished,
     output reg [31:0] result
 );
-    localparam LENGTH = 4186;
-
-    localparam IDLE = 3'd0;
-    localparam LOAD = 3'd1;
-    localparam PROCESS = 3'd2;
-    localparam CHECK = 3'd3;
-    localparam DONE = 3'd4;
-
-    reg [2:0] state;
+    reg [31:0] counter;  
+    reg [31:0] sum;
     
-    reg [10:0] ops [0:LENGTH-1]; 
+    reg stage1_valid;
+    reg [9:0] stage1_rotation_amount;
+    reg stage1_direction;
+    
+    reg stage2_valid;
+    reg [6:0] stage2_reduced_rotation;
+    reg stage2_direction;
+    reg [31:0] stage2_crosses_during;  
+    
+    reg [31:0] stage3_new_position;
+    reg stage3_valid;
+    reg [31:0] stage3_crosses_during;
+    
     reg [31:0] dial_position;
-    reg [31:0] zero_crosses;  
-    reg [12:0] counter;    
     
-    reg [31:0] rotation_amount;
-    reg [31:0] new_position;
-    reg direction;
+    wire [31:0] current_position;
+    
+    assign current_position = stage3_valid ? (stage3_new_position % 100) : dial_position;
+    
+    localparam IDLE = 2'd0;
+    localparam RUNNING = 2'd1;
+    localparam FLUSH = 2'd2;
+    localparam DONE = 2'd3;
 
-    initial begin
-        $readmemh("input.mem", ops);
+    reg [1:0] state;
+    reg [2:0] flush_counter;
+
+    always @(posedge clk) begin
+        if(state == RUNNING) begin
+            if (valid_in && ready) begin
+                stage1_rotation_amount <= operation[9:0];
+                stage1_direction <= operation[10];
+                stage1_valid <= 1;
+                counter <= counter + 1;
+            end else begin
+                stage1_valid <= 0;
+            end
+        end
+    end
+
+    always @(posedge clk) begin
+        if(state == RUNNING || state == FLUSH) begin
+            stage2_valid <= stage1_valid;
+            stage2_direction <= stage1_direction;
+            if (stage1_valid) begin
+                stage2_reduced_rotation <= stage1_rotation_amount % 100;
+                stage2_crosses_during <= stage1_rotation_amount / 100;
+            end else begin
+                stage2_crosses_during <= 0;
+            end
+                    
+            stage3_valid <= stage2_valid;
+            stage3_crosses_during <= stage2_crosses_during;
+                    
+            if (stage2_valid) begin
+                if (stage2_direction) begin
+                    stage3_new_position <= current_position + stage2_reduced_rotation + 100;
+                    if (current_position + stage2_reduced_rotation >= 100) begin
+                        stage3_crosses_during <= stage2_crosses_during + 1;
+                    end else begin
+                        stage3_crosses_during <= stage2_crosses_during;
+                    end
+                end else begin
+                    stage3_new_position <= current_position - stage2_reduced_rotation + 100;
+                    if (current_position > 0 && current_position <= stage2_reduced_rotation) begin
+                        stage3_crosses_during <= stage2_crosses_during + 1;
+                    end else begin
+                        stage3_crosses_during <= stage2_crosses_during;
+                    end
+                end
+            end
+                    
+            if (stage3_valid) begin
+                dial_position <= stage3_new_position % 100;
+                sum <= sum + stage3_crosses_during;
+            end
+        end
+    end
+
+    always @(posedge clk) begin
+        if(state == FLUSH) begin
+            stage1_valid <= 0; 
+            flush_counter <= flush_counter + 1;
+        end
     end
 
     always @(posedge clk or posedge rst) begin
-        if(rst) begin
-            dial_position <= 50;
-            zero_crosses <= 0;
-            counter <= 0;
+        if (rst) begin
             finished <= 0;
             result <= 0;
+            ready <= 0;
             state <= IDLE;
+            counter <= 0;
+            sum <= 0;
+            dial_position <= 50;
+            stage1_valid <= 0;
+            stage1_rotation_amount <= 0;
+            stage1_direction <= 0;
+            stage2_valid <= 0;
+            stage2_reduced_rotation <= 0;
+            stage2_direction <= 0;
+            stage2_crosses_during <= 0;
+            stage3_valid <= 0;
+            stage3_new_position <= 0;
+            stage3_crosses_during <= 0;
+            flush_counter <= 0;
         end else begin
-            case(state)
+            case (state)
                 IDLE: begin
-                    if(start) begin
-                        dial_position <= 50;
-                        zero_crosses <= 0;
+                    if (start) begin
+                        state <= RUNNING;
+                        ready <= 1;
                         counter <= 0;
+                        sum <= 0;
+                        dial_position <= 50;
                         finished <= 0;
-                        state <= LOAD;
+                        flush_counter <= 0;
                     end
                 end
-                LOAD: begin
-                    rotation_amount <= ops[counter][9:0] % 100;
-                    direction <= ops[counter][10];
-                    zero_crosses <= zero_crosses + (ops[counter][9:0] / 100);
-                    state <= PROCESS;
-                end
-                PROCESS: begin
-                    if(direction) begin 
-                        new_position <= dial_position + rotation_amount + 100;
-                        if(dial_position + rotation_amount >= 100) begin
-                            zero_crosses <= zero_crosses + 1;
-                        end
-                    end else begin  
-                        new_position <= dial_position - rotation_amount + 100;
-                        if(dial_position > 0 && dial_position <= rotation_amount) begin
-                            zero_crosses <= zero_crosses + 1;
-                        end
+                RUNNING: begin
+                    if (!valid_in && !stage1_valid && counter > 0) begin
+                        ready <= 0;
+                        state <= FLUSH;
+                        flush_counter <= 0;
                     end
-                    state <= CHECK;
                 end
-                CHECK: begin
-                    dial_position <= new_position % 100;
-                    if(counter == LENGTH - 1) begin
+                FLUSH: begin
+                    if (flush_counter >= 3) begin
                         state <= DONE;
-                    end else begin
-                        counter <= counter + 1;
-                        state <= LOAD;
                     end
                 end
                 DONE: begin
+                    result <= sum;
                     finished <= 1;
-                    result <= zero_crosses;
+                    ready <= 0;
                 end
             endcase
         end

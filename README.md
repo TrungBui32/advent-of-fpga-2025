@@ -60,10 +60,6 @@ That is not something I can handle because it is a silicon limit. So, I finally 
 - **Part 1**: 
 - **Part 2**: 
 
-### Day 4: [Printing Department](https://adventofcode.com/2025/day/4)
-- **Part 1**:
-- **Part 2**: 
-
 ### Day 5: [Cafeteria](https://adventofcode.com/2025/day/5)
 - **Part 1**:
 - **Part 2**:
@@ -72,25 +68,9 @@ That is not something I can handle because it is a silicon limit. So, I finally 
 - **Part 1**: 
 - **Part 2**:
 
-### Day 7: [Laboratories](https://adventofcode.com/2025/day/7)
-- **Part 1**: 
-- **Part 2**:
-
 ### Day 8: [Playground](https://adventofcode.com/2025/day/8)
 - **Part 1**: 
 - **Part 2**: 
-
-### Day 9: [Movie Theater](https://adventofcode.com/2025/day/9) 
-- **Part 1**: 
-- **Part 2**: 
-
-### Day 10: [Factory](https://adventofcode.com/2025/day/10)
-- **Part 1**: 
-- **Part 2**: 
-
-### Day 11: [Reactor](https://adventofcode.com/2025/day/11)
-- **Part 1**:
-- **Part 2**:
 
 ### Day 12: [Christmas Tree Farm](https://adventofcode.com/2025/day/12)
 - **Part 1**: 
@@ -100,8 +80,6 @@ That is not something I can handle because it is a silicon limit. So, I finally 
 ```
 day_X/
 ├── input.txt                   # Raw problem input
-├── convert_input.py            # Input preprocessing script
-├── *.mem                       # Memory initialization files
 ├── *_part1.v                   # Part 1 Verilog implementation
 ├── *_part2.v                   # Part 2 Verilog implementation
 ├── test_day_X.py               # Cocotb test file (supporting print result)

@@ -1,197 +1,308 @@
 module gift_shop_part1(
     input clk, 
     input rst,
-    input start,
+    input [31:0] data_in,   
+    input valid_in,         
+    output ready,       
     output reg finished,
-    output reg [35:0] result
+    output reg [63:0] result
 );
-    localparam IDLE = 4'd0;
-    localparam LOAD_RANGE = 4'd1;
-    localparam NORMALIZE = 4'd2;
-    localparam CALC_START_END = 4'd3;
-    localparam SUM = 4'd4;
-    localparam MULTIPLY = 4'd5;
-    localparam SHIFTING = 4'd6;
-    localparam DONE = 4'd7;
-        
-    localparam LENGTH = 34;
+    localparam LENGTH = 34; 
     localparam HEX_LENGTH = 40;
 
-    reg [3:0] state;
-    reg [HEX_LENGTH-1:0] table_1 [0:LENGTH-1]; 
-    reg [HEX_LENGTH-1:0] table_2 [0:LENGTH-1]; 
+    reg [1:0] word_cnt;
+    reg [79:0] range_buffer;
+    reg range_ready;
     
-    reg [HEX_LENGTH-1:0] range_start;
-    reg [HEX_LENGTH-1:0] range_end;
-    reg [5:0] table_idx;
-
-    reg [31:0] start_len;
-    reg [31:0] end_len;
+    wire [HEX_LENGTH-1:0] range_start_in;
+    wire [HEX_LENGTH-1:0] range_end_in;
+    
+    assign range_start_in = range_buffer[79:40];
+    assign range_end_in = range_buffer[39:0];
+    assign ready = !rst;  
+    
+    reg stage1_valid;
+    reg [HEX_LENGTH-1:0] stage1_range_start;
+    reg [HEX_LENGTH-1:0] stage1_range_end;
+    reg [31:0] stage1_start_len;
+    reg [31:0] stage1_end_len;
+    
+    reg stage2_valid;
+    reg [HEX_LENGTH-1:0] stage2_range_start;
+    reg [HEX_LENGTH-1:0] stage2_range_end;
+    reg [31:0] stage2_start_len;
     reg [31:0] half_len;
-    reg [35:0] half_start;
-    reg [35:0] second_half_start;
-    reg [35:0] second_half_end;
-    reg [35:0] half_end;
-    reg [31:0] iter;
-
-    reg [35:0] sum;
-    reg [35:0] temp_sum;
-    reg [35:0] temp_temp_sum;       // lol 
-
-    reg [35:0] mul_const;
-    reg [35:0] sum_const;
+    reg [35:0] first_half_start, first_half_end;
+    reg [35:0] second_half_start, second_half_end;
+    reg [35:0] final_half_start, final_half_end;
+    
+    reg stage3_valid;
+    reg [35:0] stage3_half_start;
+    reg [35:0] stage3_half_end;
+    reg [31:0] stage3_half_len;
+    reg stage3_range_valid;  
     reg [35:0] sub_const;
-    reg [35:0] addition;
+    
+    reg stage4_valid;
+    reg [35:0] stage4_mul_const;
+    reg [35:0] stage4_sum_const;
+    reg [35:0] stage4_addition;
+    reg [31:0] stage4_half_len;
+    reg stage4_range_valid; 
+    
+    reg stage5_valid;
+    reg [63:0] stage5_result;
+    reg stage5_range_valid; 
 
-    initial begin
-        $readmemh("table_1.mem", table_1);
-        $readmemh("table_2.mem", table_2);
-    end
-
+    reg [63:0] temp_sum;
+    reg [63:0] shifted_sum;
+    
+    reg [63:0] sum;
+    reg [31:0] ranges_received;   
+    reg [31:0] ranges_completed;  
+    
     function [31:0] length;
         input [HEX_LENGTH-1:0] number;
-        if(number[39:36] != 0) begin
-            length = 32'd10;
-        end else if(number[35:32] != 0) begin
-            length = 32'd9;
-        end else if(number[31:28] != 0) begin
-            length = 32'd8;
-        end else if(number[27:24] != 0) begin
-            length = 32'd7;
-        end else if(number[23:20] != 0) begin
-            length = 32'd6;
-        end else if(number[19:16] != 0) begin
-            length = 32'd5;
-        end else if(number[15:12] != 0) begin
-            length = 32'd4;
-        end else if(number[11:8] != 0) begin
-            length = 32'd3;
-        end else if(number[7:4] != 0) begin
-            length = 32'd2;
-        end else begin
-            length = 32'd1;
+        begin
+            if(number[39:36] != 0) length = 32'd10;
+            else if(number[35:32] != 0) length = 32'd9;
+            else if(number[31:28] != 0) length = 32'd8;
+            else if(number[27:24] != 0) length = 32'd7;
+            else if(number[23:20] != 0) length = 32'd6;
+            else if(number[19:16] != 0) length = 32'd5;
+            else if(number[15:12] != 0) length = 32'd4;
+            else if(number[11:8] != 0) length = 32'd3;
+            else if(number[7:4] != 0) length = 32'd2;
+            else length = 32'd1;
         end
     endfunction
-
-    always @(posedge clk or posedge rst) begin
-        if(rst) begin
-            state <= IDLE;
-            finished <= 1'b0;
-            result <= 0;
-            table_idx <= 0;
-            sum <= 0;
-        end else begin
-            case(state)
-                IDLE: begin
-                    if(start) begin
-                        state <= LOAD_RANGE;
-                        table_idx <= 0;
-                        sum <= 0;
-                        temp_sum <= 0;
-                        finished <= 1'b0;
-                        iter <= 0;
-                    end
+    
+    function [35:0] extract_decimal;
+        input [HEX_LENGTH-1:0] bcd;
+        input [31:0] num_digits;
+        integer i;
+        reg [35:0] result;
+        begin
+            result = 0;
+            for (i = 10; i >= 1; i = i - 1) begin
+                if (i <= num_digits) begin
+                    result = result * 10 + bcd[(i * 4) - 1 -: 4];
                 end
-                LOAD_RANGE: begin
-                    if(table_idx < LENGTH) begin
-                        range_start <= table_1[table_idx];
-                        range_end <= table_2[table_idx];
-                        start_len <= length(table_1[table_idx]);
-                        end_len <= length(table_2[table_idx]);
-                        state <= NORMALIZE;
-                    end else begin
-                        state <= DONE;
-                    end 
-                end
-                NORMALIZE: begin
-                    // ignore the case start_end + 2 <= end_len as input does not contain such case
-                    iter <= start_len;
-                    if(start_len[0] == 1'b1 && end_len[0] == 1'b1 && start_len >= end_len) begin
-                        state <= LOAD_RANGE;
-                        if(table_idx < LENGTH - 1) begin
-                            table_idx <= table_idx + 1;
-                        end else begin
-                            state <= DONE;
-                        end
-                    end else if(start_len[0] == 1'b1 || end_len[0] == 1'b1) begin
-                        if(start_len[0] == 1'b1) begin
-                            start_len <= start_len + 1;
-                            range_start <= 40'h1 << (start_len << 2);
-                            iter <= start_len + 1;
-                        end
-                        if(end_len[0] == 1'b1) begin 
-                            // end_len <= end_len - 1;
-                            range_end <= 40'h9999999999;
-                            iter <= end_len - 1;
-                        end
-                        state <= CALC_START_END;
-                    end else begin
-                        state <= CALC_START_END;
-                    end
-                    
-                    half_start <= 0;
-                    half_end <= 0;
-                    second_half_start <= 0;
-                    second_half_end <= 0;
-                end
-                CALC_START_END: begin
-                    if(iter > start_len >> 1) begin
-                        half_start <= (half_start << 3) + (half_start << 1) + range_start[(iter << 2) - 1 -: 4];
-                        half_end <= (half_end << 3) + (half_end << 1) + range_end[(iter << 2) - 1 -: 4];
-                        second_half_start <= (second_half_start << 3) + (second_half_start << 1) + range_start[((iter - (start_len >> 1)) << 2) - 1 -: 4];
-                        second_half_end <= (second_half_end << 3) + (second_half_end << 1) + range_end[((iter - (start_len >> 1)) << 2) - 1 -: 4];
-                        iter <= iter - 1;
-                    end else begin
-                        if(second_half_start > half_start) begin
-                            half_start <= half_start + 1;
-                        end
-                        if(second_half_end < half_end) begin
-                            half_end <= half_end - 1;
-                        end
-                        half_len <= start_len >> 1;
-                        state <= SUM;
-                        iter <= 0;
-                    end
-                end
-                SUM: begin
-                    if(half_end >= half_start) begin
-                        sum_const <= half_start + half_end;
-                        sub_const = half_end - half_start;
-                        if(sub_const[0]) begin
-                            addition <= 0;
-                            mul_const <= ((half_end - half_start) >> 1) + 1;
-                        end else begin
-                            addition <= (half_start + half_end) >> 1;
-                            mul_const <= (half_end - half_start) >> 1;
-                        end
-                        state <= MULTIPLY;
-                    end else begin 
-                        state <= LOAD_RANGE;
-                        table_idx <= table_idx + 1;
-                    end 
-                end
-                MULTIPLY: begin
-                    temp_sum <= mul_const*sum_const + addition;
-                    temp_temp_sum <= mul_const*sum_const + addition;
-                    state <= SHIFTING;
-                end
-                SHIFTING: begin
-                    if(iter < half_len) begin
-                        iter <= iter + 1;
-                        temp_sum <= (temp_sum << 3) + (temp_sum << 1);
-                    end else begin
-                        sum <= sum + temp_sum + temp_temp_sum;
-                        temp_sum <= 0;
-                        temp_temp_sum <= 0;
-                        table_idx <= table_idx + 1;
-                        state <= LOAD_RANGE;
-                    end
-                end
-                DONE: begin
-                    finished <= 1'b1;
-                    result <= sum;
-                end
+            end
+            extract_decimal = result;
+        end
+    endfunction
+    
+    function [63:0] power_of_10;
+        input [31:0] exp;
+        begin
+            case(exp)
+                0: power_of_10 = 64'd1;
+                1: power_of_10 = 64'd10;
+                2: power_of_10 = 64'd100;
+                3: power_of_10 = 64'd1000;
+                4: power_of_10 = 64'd10000;
+                5: power_of_10 = 64'd100000;
+                default: power_of_10 = 64'd1;
             endcase
         end
+    endfunction
+    
+    localparam CHUNK1 = 2'd0;
+    localparam CHUNK2 = 2'd1;
+    localparam CHUNK3 = 2'd2;
+    
+    always @(posedge clk) begin
+        if (rst) begin
+            word_cnt <= 0;
+            range_ready <= 0;
+        end else begin
+            range_ready <= 0;
+            if (valid_in && ready) begin
+                case(word_cnt)
+                    CHUNK1: begin
+                        range_buffer[31:0] <= data_in;
+                        word_cnt <= 2'd1;
+                    end
+                    CHUNK2: begin
+                        range_buffer[63:32] <= data_in;
+                        word_cnt <= 2'd2;
+                    end
+                    CHUNK3: begin
+                        range_buffer[79:64] <= data_in[15:0];
+                        range_ready <= 1;
+                        word_cnt <= 2'd0;
+                    end
+                endcase
+            end
+        end
     end
+    
+    always @(posedge clk) begin
+        if (rst) begin
+            stage1_valid <= 0;
+            ranges_received <= 0;
+        end else begin
+            if (range_ready) begin
+                stage1_valid <= 1;
+                stage1_range_start <= range_start_in;
+                stage1_range_end <= range_end_in;
+                stage1_start_len <= length(range_start_in);
+                stage1_end_len <= length(range_end_in);
+                ranges_received <= ranges_received + 1;
+            end else begin
+                stage1_valid <= 0;
+            end
+        end
+    end
+    
+    always @(posedge clk) begin
+        if (rst) begin
+            stage2_valid <= 0;
+        end else begin
+            if (stage1_valid) begin
+                if (stage1_start_len[0] == 1'b1 && stage1_end_len[0] == 1'b1 && 
+                    stage1_start_len >= stage1_end_len) begin
+                    stage2_range_start <= 40'h0000000002;  
+                    stage2_range_end <= 40'h0000000001;    
+                    stage2_start_len <= 32'd2;
+                    stage2_valid <= 1;
+                end else begin
+                    if (stage1_start_len[0] == 1'b1) begin
+                        stage2_range_start <= 40'h1 << (stage1_start_len << 2);
+                        stage2_start_len <= stage1_start_len + 1;
+                    end else begin
+                        stage2_range_start <= stage1_range_start;
+                        stage2_start_len <= stage1_start_len;
+                    end
+                    
+                    if (stage1_end_len[0] == 1'b1) begin 
+                        stage2_range_end <= 40'h9999999999;
+                    end else begin
+                        stage2_range_end <= stage1_range_end;
+                    end
+                    
+                    stage2_valid <= 1;
+                end
+            end else begin
+                stage2_valid <= 0;
+            end
+        end
+    end
+    
+    always @(posedge clk) begin
+        if (rst) begin
+            stage3_valid <= 0;
+            stage3_range_valid <= 0;
+        end else begin
+            if (stage2_valid) begin                
+                half_len = stage2_start_len >> 1;
+                
+                first_half_start = extract_decimal(stage2_range_start >> (half_len << 2), half_len);
+                first_half_end = extract_decimal(stage2_range_end >> (half_len << 2), half_len);
+                
+                second_half_start = extract_decimal(stage2_range_start, half_len);
+                second_half_end = extract_decimal(stage2_range_end, half_len);
+                
+                final_half_start = first_half_start;
+                final_half_end = first_half_end;
+                
+                if (second_half_start > first_half_start) begin
+                    final_half_start = first_half_start + 1;
+                end
+                
+                if (second_half_end < first_half_end) begin
+                    final_half_end = first_half_end - 1;
+                end
+                
+                stage3_half_start <= final_half_start;
+                stage3_half_end <= final_half_end;
+                stage3_half_len <= half_len;
+                stage3_valid <= 1;
+                stage3_range_valid <= 1;
+            end else begin
+                stage3_valid <= 0;
+                stage3_range_valid <= 0;
+            end
+        end
+    end 
+    
+    always @(posedge clk) begin
+        if (rst) begin
+            stage4_valid <= 0;
+            stage4_range_valid <= 0;
+        end else begin
+            stage4_range_valid <= stage3_range_valid;
+            
+            if (stage3_valid) begin
+                if (stage3_half_end >= stage3_half_start) begin
+                    sub_const = stage3_half_end - stage3_half_start;
+                    
+                    stage4_sum_const <= stage3_half_start + stage3_half_end;
+                    stage4_half_len <= stage3_half_len;
+                    
+                    if (sub_const[0]) begin
+                        stage4_addition <= 0;
+                        stage4_mul_const <= ((stage3_half_end - stage3_half_start) >> 1) + 1;
+                    end else begin
+                        stage4_addition <= (stage3_half_start + stage3_half_end) >> 1;
+                        stage4_mul_const <= (stage3_half_end - stage3_half_start) >> 1;
+                    end
+                    
+                    stage4_valid <= 1;
+                end else begin 
+                    stage4_valid <= 0;
+                end
+            end else begin
+                stage4_valid <= 0;
+            end
+        end
+    end
+    
+    always @(posedge clk) begin
+        if (rst) begin
+            stage5_valid <= 0;
+            stage5_range_valid <= 0;
+        end else begin
+            stage5_range_valid <= stage4_range_valid;  
+            
+            if (stage4_valid) begin               
+                temp_sum = stage4_mul_const * stage4_sum_const + stage4_addition;
+                
+                shifted_sum = temp_sum * power_of_10(stage4_half_len);
+                
+                stage5_result <= shifted_sum + temp_sum;
+                stage5_valid <= 1;
+            end else begin
+                stage5_valid <= 0;
+            end
+        end
+    end
+    
+    always @(posedge clk) begin
+        if (rst) begin
+            sum <= 0;
+            finished <= 0;
+            result <= 0;
+            ranges_completed <= 0;
+        end else begin
+            if (stage5_valid) begin
+                sum <= sum + stage5_result;
+            end
+            
+            if (stage5_range_valid) begin
+                ranges_completed <= ranges_completed + 1;
+            end
+            
+            if (ranges_completed == LENGTH - 1 && stage5_range_valid && !finished) begin
+                finished <= 1;
+                if (stage5_valid) begin
+                    result <= sum + stage5_result;  
+                end else begin
+                    result <= sum;
+                end
+            end
+        end
+    end
+    
 endmodule

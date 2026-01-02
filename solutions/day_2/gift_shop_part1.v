@@ -31,6 +31,11 @@ module gift_shop_part1(
     reg [HEX_LENGTH-1:0] stage2_range_start;
     reg [HEX_LENGTH-1:0] stage2_range_end;
     reg [31:0] stage2_start_len;
+
+    reg stage25_valid;
+    reg [31:0] s25_half_len;
+    reg [31:0] s25_f_start, s25_f_end;
+    reg [31:0] s25_s_start, s25_s_end;
     
     reg stage3_valid;
     reg stage3_range_valid;
@@ -92,20 +97,36 @@ module gift_shop_part1(
     endfunction
     
     function [31:0] extract_decimal;
-        input [HEX_LENGTH-1:0] bcd;
+        input [39:0] bcd;
         input [31:0] num_digits;
+        
+        reg [31:0] t0, t1, t2, t3, t4, t5, t6, t7, t8, t9;
+        reg [31:0] sum_L1_0, sum_L1_1, sum_L1_2, sum_L1_3, sum_L1_4;
+        reg [31:0] sum_L2_0, sum_L2_1, sum_L2_2;
+        
         begin
-            extract_decimal = 
-                ((num_digits >= 1) ? bcd[3:0] : 4'd0) +
-                ((num_digits >= 2) ? bcd[7:4] * 10 : 36'd0) +
-                ((num_digits >= 3) ? bcd[11:8] * 100 : 36'd0) +
-                ((num_digits >= 4) ? bcd[15:12] * 1000 : 36'd0) +
-                ((num_digits >= 5) ? bcd[19:16] * 10000 : 36'd0) +
-                ((num_digits >= 6) ? bcd[23:20] * 100000 : 36'd0) +
-                ((num_digits >= 7) ? bcd[27:24] * 1000000 : 36'd0) +
-                ((num_digits >= 8) ? bcd[31:28] * 10000000 : 36'd0) +
-                ((num_digits >= 9) ? bcd[35:32] * 100000000 : 36'd0) +
-                ((num_digits >= 10) ? bcd[39:36] * 1000000000 : 36'd0);
+            t0 = (num_digits >= 1)  ? bcd[3:0]   : 32'd0;
+            t1 = (num_digits >= 2)  ? bcd[7:4]   * 10 : 32'd0;
+            t2 = (num_digits >= 3)  ? bcd[11:8]  * 100 : 32'd0;
+            t3 = (num_digits >= 4)  ? bcd[15:12] * 1000 : 32'd0;
+            t4 = (num_digits >= 5)  ? bcd[19:16] * 10000 : 32'd0;
+            t5 = (num_digits >= 6)  ? bcd[23:20] * 100000 : 32'd0;
+            t6 = (num_digits >= 7)  ? bcd[27:24] * 1000000 : 32'd0;
+            t7 = (num_digits >= 8)  ? bcd[31:28] * 10000000 : 32'd0;
+            t8 = (num_digits >= 9)  ? bcd[35:32] * 100000000 : 32'd0;
+            t9 = (num_digits >= 10) ? bcd[39:36] * 1000000000 : 32'd0;
+
+            sum_L1_0 = t0 + t1;
+            sum_L1_1 = t2 + t3;
+            sum_L1_2 = t4 + t5;
+            sum_L1_3 = t6 + t7;
+            sum_L1_4 = t8 + t9;
+
+            sum_L2_0 = sum_L1_0 + sum_L1_1;
+            sum_L2_1 = sum_L1_2 + sum_L1_3;
+            sum_L2_2 = sum_L1_4; 
+
+            extract_decimal = sum_L2_0 + sum_L2_1 + sum_L2_2;
         end
     endfunction
     
@@ -205,35 +226,35 @@ module gift_shop_part1(
             end
         end
     end
-    
+
     assign stage3_half_len_wire = stage2_start_len >> 1;
-    
-    assign stage3_first_half_start = extract_decimal(stage2_range_start >> (stage3_half_len_wire << 2), stage3_half_len_wire);
-    
-    assign stage3_first_half_end = extract_decimal(stage2_range_end >> (stage3_half_len_wire << 2), stage3_half_len_wire);
-    
-    assign stage3_second_half_start = extract_decimal(stage2_range_start, stage3_half_len_wire);
-    
-    assign stage3_second_half_end = extract_decimal(stage2_range_end, stage3_half_len_wire);
-    
-    assign stage3_final_half_start = (stage3_second_half_start > stage3_first_half_start) ? (stage3_first_half_start + 1) : stage3_first_half_start;
-    
-    assign stage3_final_half_end = (stage3_second_half_end < stage3_first_half_end) ? (stage3_first_half_end - 1) : stage3_first_half_end;
+
+    always @(posedge clk) begin
+        if (rst) begin
+            stage25_valid <= 0;
+        end else begin
+            stage25_valid <= stage2_valid;
+            if (stage2_valid) begin
+                s25_half_len <= stage3_half_len_wire;
+                s25_f_start <= extract_decimal(stage2_range_start >> (stage3_half_len_wire << 2), stage3_half_len_wire);
+                s25_f_end   <= extract_decimal(stage2_range_end   >> (stage3_half_len_wire << 2), stage3_half_len_wire);
+                s25_s_start <= extract_decimal(stage2_range_start, stage3_half_len_wire);
+                s25_s_end   <= extract_decimal(stage2_range_end,   stage3_half_len_wire);
+            end
+        end
+    end
     
     always @(posedge clk) begin
         if (rst) begin
             stage3_valid <= 0;
             stage3_range_valid <= 0;
         end else begin
-            if (stage2_valid) begin
-                stage3_half_start <= stage3_final_half_start;
-                stage3_half_end <= stage3_final_half_end;
-                stage3_half_len <= stage3_half_len_wire;
-                stage3_valid <= 1;
-                stage3_range_valid <= 1;
-            end else begin
-                stage3_valid <= 0;
-                stage3_range_valid <= 0;
+            stage3_valid <= stage25_valid;
+            stage3_range_valid <= stage25_valid;
+            if (stage25_valid) begin
+                stage3_half_len <= s25_half_len;
+                stage3_half_start <= (s25_s_start > s25_f_start) ? (s25_f_start + 1) : s25_f_start;
+                stage3_half_end <= (s25_s_end < s25_f_end) ? (s25_f_end - 1) : s25_f_end;
             end
         end
     end

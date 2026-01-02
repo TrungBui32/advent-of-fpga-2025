@@ -34,33 +34,42 @@ module gift_shop_part1(
     
     reg stage3_valid;
     reg stage3_range_valid;
-    reg [35:0] stage3_half_start;
-    reg [35:0] stage3_half_end;
+    reg [31:0] stage3_half_start;
+    reg [31:0] stage3_half_end;
     reg [31:0] stage3_half_len;
     
     wire [31:0] stage3_half_len_wire;
-    wire [35:0] stage3_first_half_start;
-    wire [35:0] stage3_first_half_end;
-    wire [35:0] stage3_second_half_start;
-    wire [35:0] stage3_second_half_end;
-    wire [35:0] stage3_final_half_start;
-    wire [35:0] stage3_final_half_end;
+    wire [31:0] stage3_first_half_start;
+    wire [31:0] stage3_first_half_end;
+    wire [31:0] stage3_second_half_start;
+    wire [31:0] stage3_second_half_end;
+    wire [31:0] stage3_final_half_start;
+    wire [31:0] stage3_final_half_end;
     
     reg stage4_valid;
     reg stage4_range_valid;
-    reg [35:0] stage4_mul_const;
-    reg [35:0] stage4_sum_const;
-    reg [35:0] stage4_addition;
+    reg [31:0] stage4_mul_const;
+    reg [31:0] stage4_sum_const;
+    reg [31:0] stage4_addition;
     reg [31:0] stage4_half_len;
     
-    wire [35:0] stage4_sub_const;
+    wire [31:0] stage4_sub_const;
     
     reg stage5_valid;
     reg stage5_range_valid;
-    reg [63:0] stage5_result;
+    reg [63:0] stage5_prod_mid;    
+    reg [31:0] stage5_addition_q; 
+    reg [31:0] stage5_half_len_q;
+
+    reg stage6_valid;
+    reg stage6_range_valid;
+    reg [63:0] stage6_result;
     
     wire [63:0] stage5_temp_sum;
     wire [63:0] stage5_shifted_sum;
+
+    wire [63:0] stage6_temp_sum;
+    wire [63:0] stage6_shifted_sum;
     
     reg [63:0] sum;
     reg [31:0] ranges_received;
@@ -82,7 +91,7 @@ module gift_shop_part1(
         end
     endfunction
     
-    function [35:0] extract_decimal;
+    function [31:0] extract_decimal;
         input [HEX_LENGTH-1:0] bcd;
         input [31:0] num_digits;
         begin
@@ -199,31 +208,17 @@ module gift_shop_part1(
     
     assign stage3_half_len_wire = stage2_start_len >> 1;
     
-    assign stage3_first_half_start = extract_decimal(
-        stage2_range_start >> (stage3_half_len_wire << 2), 
-        stage3_half_len_wire
-    );
+    assign stage3_first_half_start = extract_decimal(stage2_range_start >> (stage3_half_len_wire << 2), stage3_half_len_wire);
     
-    assign stage3_first_half_end = extract_decimal(
-        stage2_range_end >> (stage3_half_len_wire << 2), 
-        stage3_half_len_wire
-    );
+    assign stage3_first_half_end = extract_decimal(stage2_range_end >> (stage3_half_len_wire << 2), stage3_half_len_wire);
     
-    assign stage3_second_half_start = extract_decimal(
-        stage2_range_start, 
-        stage3_half_len_wire
-    );
+    assign stage3_second_half_start = extract_decimal(stage2_range_start, stage3_half_len_wire);
     
-    assign stage3_second_half_end = extract_decimal(
-        stage2_range_end, 
-        stage3_half_len_wire
-    );
+    assign stage3_second_half_end = extract_decimal(stage2_range_end, stage3_half_len_wire);
     
-    assign stage3_final_half_start = (stage3_second_half_start > stage3_first_half_start) ? 
-                                     (stage3_first_half_start + 1) : stage3_first_half_start;
+    assign stage3_final_half_start = (stage3_second_half_start > stage3_first_half_start) ? (stage3_first_half_start + 1) : stage3_first_half_start;
     
-    assign stage3_final_half_end = (stage3_second_half_end < stage3_first_half_end) ? 
-                                   (stage3_first_half_end - 1) : stage3_first_half_end;
+    assign stage3_final_half_end = (stage3_second_half_end < stage3_first_half_end) ? (stage3_first_half_end - 1) : stage3_first_half_end;
     
     always @(posedge clk) begin
         if (rst) begin
@@ -279,13 +274,28 @@ module gift_shop_part1(
             stage5_valid <= 0;
             stage5_range_valid <= 0;
         end else begin
+            stage5_valid <= stage4_valid;
             stage5_range_valid <= stage4_range_valid;
-            
             if (stage4_valid) begin
-                stage5_result <= stage5_shifted_sum + stage5_temp_sum;
-                stage5_valid <= 1;
-            end else begin
-                stage5_valid <= 0;
+                stage5_prod_mid <= stage4_mul_const * stage4_sum_const;
+                stage5_addition_q <= stage4_addition;
+                stage5_half_len_q <= stage4_half_len;
+            end
+        end
+    end
+
+    assign stage6_temp_sum = stage5_prod_mid + stage5_addition_q;
+    assign stage6_shifted_sum = stage6_temp_sum * power_ten(stage5_half_len_q);
+
+    always @(posedge clk) begin
+        if (rst) begin
+            stage6_valid <= 0;
+            stage6_range_valid <= 0;
+        end else begin
+            stage6_valid <= stage5_valid;
+            stage6_range_valid <= stage5_range_valid;
+            if (stage5_valid) begin
+                stage6_result <= stage6_shifted_sum + stage6_temp_sum;
             end
         end
     end
@@ -297,23 +307,18 @@ module gift_shop_part1(
             result <= 0;
             ranges_completed <= 0;
         end else begin
-            if (stage5_valid) begin
-                sum <= sum + stage5_result;
+            if (stage6_valid) begin
+                sum <= sum + stage6_result;
             end
             
-            if (stage5_range_valid) begin
+            if (stage6_range_valid) begin
                 ranges_completed <= ranges_completed + 1;
             end
             
-            if (ranges_completed == LENGTH - 1 && stage5_range_valid && !finished) begin
+            if (ranges_completed == LENGTH - 1 && stage6_range_valid && !finished) begin
                 finished <= 1;
-                if (stage5_valid) begin
-                    result <= sum + stage5_result;  
-                end else begin
-                    result <= sum;
-                end
+                result <= sum + (stage6_valid ? stage6_result : 64'd0);
             end
         end
     end
-    
 endmodule

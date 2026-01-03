@@ -152,8 +152,10 @@ module christmas_tree_farm(
             result <= 0;
         end else if(stage5_valid) begin
             count_valid <= count_valid + 1;
-            if(stage5_fits) count_result <= count_result + 1;
-            
+            if(stage5_fits) begin 
+                count_result <= count_result + 1;
+            end
+
             if(count_valid == NUM_REGIONS - 1) begin
                 finished <= 1;
                 result <= count_result + (stage5_fits ? 1 : 0);

@@ -1,113 +1,163 @@
 module christmas_tree_farm(
-    input clk,
+    input clk, 
     input rst,
-    input start,
+    input [31:0] data_in,   
+    input valid_in,         
+    output ready,       
     output reg finished,
-    output [63:0] result
+    output reg [63:0] result
 );
     localparam NUM_REGIONS = 1000;
-    
-    localparam IDLE = 2'd0;
-    localparam RUN  = 2'd1;
-    localparam DONE = 2'd2;
+    localparam CHUNK1 = 1'b0;
+    localparam CHUNK2 = 1'b1;
 
-    reg [1:0] state;
-    
-    reg [9:0] count_down;
-    
-    reg [47:0] quantities [0:NUM_REGIONS-1];
-    reg [15:0] sizes [0:NUM_REGIONS-1];
+    reg word_cnt;
+    reg [63:0] buffer;
+    reg input_ready;
 
-    reg [47:0] q_s1;
-    reg [15:0] s_s1;
-    reg v_s1;
+    reg [31:0] count_valid;
+    reg [31:0] count_result;
 
-    reg [15:0] sum_s2;
-    reg [7:0] w_div_s2, h_div_s2;
-    reg v_s2;
-    reg [15:0] area_s3, sum_s3;
-    reg v_s3;
-    reg inc_s4, v_s4;
+    reg stage1_valid;
+    reg [7:0] stage1_width;
+    reg [7:0] stage1_height;
+    reg [7:0] stage1_p1;
+    reg [7:0] stage1_p2;
+    reg [7:0] stage1_p3;
+    reg [7:0] stage1_p4;
+    reg [7:0] stage1_p5;
+    reg [7:0] stage1_p6;
 
-    reg [31:0] res_low, res_high;
-    reg carry_to_high, v_s5;
+    reg stage2_valid;
+    reg [11:0] stage2_pp1;
+    reg [11:0] stage2_pp2; 
+    reg [15:0] stage2_sum_presents1;
+    reg [15:0] stage2_sum_presents2;
 
-    assign result = {res_high, res_low};
+    reg stage2a_valid;
+    reg [31:0] stage2a_actual_area;
+    reg [31:0] stage2a_sum_presents;
+    reg [11:0] stage2a_pp1;
 
-    initial begin
-        $readmemb("sizes.mem", sizes);
-        $readmemb("quantities.mem", quantities);
+    reg stage3_valid;
+    reg [31:0] stage3_required_area;
+    reg [31:0] stage3_actual_area;
+
+    reg stage4_valid;
+    reg stage4_fits;
+
+    assign ready = 1'b1;
+
+    always @(posedge clk) begin
+        if (rst) begin
+            word_cnt <= CHUNK1;
+            input_ready <= 0;
+            buffer <= 64'b0;
+        end else begin
+            input_ready <= 0;
+            if (valid_in) begin
+                if (word_cnt == CHUNK1) begin
+                    buffer[31:0] <= data_in;
+                    word_cnt <= CHUNK2;
+                end else begin
+                    buffer[63:32] <= data_in;
+                    word_cnt <= CHUNK1;
+                    input_ready <= 1; 
+                end
+            end
+        end
     end
 
     always @(posedge clk) begin
-        sum_s2   <= q_s1[47:40] + q_s1[39:32] + q_s1[31:24] + q_s1[23:16] + q_s1[15:8]  + q_s1[7:0];
-        w_div_s2 <= s_s1[15:8] / 3; 
-        h_div_s2 <= s_s1[7:0] / 3;
-
-        area_s3 <= w_div_s2 * h_div_s2;
-        sum_s3  <= sum_s2;
-
-        inc_s4 <= (sum_s3 <= area_s3);
-
-        if (v_s4 && inc_s4) begin
-            {carry_to_high, res_low} <= res_low + 1'b1;
-        end else begin
-            carry_to_high <= 1'b0;
-        end
-
-        if (carry_to_high) begin
-            res_high <= res_high + 1'b1;
+        if(rst) stage1_valid <= 0;
+        else begin
+            stage1_valid <= input_ready;
+            if(input_ready) begin
+                stage1_p1 <= buffer[7:0];
+                stage1_p2 <= buffer[15:8];
+                stage1_width <= buffer[23:16];
+                stage1_height <= buffer[31:24];
+                stage1_p3 <= buffer[39:32];
+                stage1_p4 <= buffer[47:40];
+                stage1_p5 <= buffer[55:48];
+                stage1_p6 <= buffer[63:56];
+            end
         end
     end
 
-    always @(posedge clk or posedge rst) begin
-        if (rst) begin
-            state <= IDLE;
-            count_down <= 0;
+    always @(posedge clk) begin
+        if(rst) begin
+            stage2_valid <= 0;
+            stage2_pp1 <= 0;
+            stage2_pp2 <= 0;
+            stage2_sum_presents1 <= 0;
+            stage2_sum_presents2 <= 0;
+        end else begin
+            stage2_valid <= stage1_valid;
+            if(stage1_valid) begin
+                stage2_pp1 <= stage1_width[3:0] * stage1_height;
+                stage2_pp2 <= stage1_width[7:4] * stage1_height;
+                stage2_sum_presents1 <= stage1_p1 + stage1_p2 + stage1_p3;
+                stage2_sum_presents2 <= stage1_p4 + stage1_p5 + stage1_p6;
+            end
+        end
+    end
+
+    always @(posedge clk) begin
+        if(rst) begin
+            stage2a_valid <= 0;
+            stage2a_actual_area <= 0;
+            stage2a_sum_presents <= 0;
+        end else begin
+            stage2a_valid <= stage2_valid;
+            if(stage2_valid) begin
+                stage2a_pp1 <= stage2_pp1;
+                stage2a_actual_area <= stage2_pp2 << 4;
+                stage2a_sum_presents <= stage2_sum_presents1 + stage2_sum_presents2;
+            end
+        end
+    end
+
+    always @(posedge clk) begin
+        if(rst) begin
+            stage3_valid <= 0;
+            stage3_required_area <= 0;
+            stage3_actual_area <= 0;
+        end else begin
+            stage3_valid <= stage2a_valid; 
+            if(stage2a_valid) begin        
+                stage3_required_area <= (stage2a_sum_presents << 3) + stage2a_sum_presents;
+                stage3_actual_area <= stage2a_actual_area + stage2a_pp1;  
+            end
+        end
+    end
+
+    always @(posedge clk) begin
+        if(rst) begin
+            stage4_valid <= 0;
+            stage4_fits <= 0;
+        end else begin
+            stage4_valid <= stage3_valid;
+            if(stage3_valid) begin
+                stage4_fits <= (stage3_required_area <= stage3_actual_area);
+            end
+        end
+    end
+
+    always @(posedge clk) begin
+        if(rst) begin
+            count_valid <= 0;
+            count_result <= 0;
             finished <= 0;
-            v_s1 <= 0; v_s2 <= 0; v_s3 <= 0; v_s4 <= 0; v_s5 <= 0;
-        end else begin
-            case (state)
-                IDLE: begin
-                    finished <= 0;
-                    if (start) begin
-                        state <= RUN;
-                        count_down <= NUM_REGIONS - 1;
-                        v_s1 <= 0;
-                    end
-                end
-                RUN: begin
-                    q_s1 <= quantities[count_down];
-                    s_s1 <= sizes[count_down];
-                    v_s1 <= 1'b1;
-
-                    if (count_down == 0) begin
-                        state <= DONE;
-                    end else begin
-                        count_down <= count_down - 1'b1;
-                    end
-                end
-                DONE: begin
-                    v_s1 <= 1'b0;
-                    if (!v_s1 && !v_s2 && !v_s3 && !v_s4 && !v_s5 && !carry_to_high) begin
-                        finished <= 1'b1;
-                        state <= IDLE;
-                    end
-                end
-            endcase
-
-            v_s2 <= v_s1;
-            v_s3 <= v_s2;
-            v_s4 <= v_s3;
-            v_s5 <= v_s4;
-        end
-    end
-
-    always @(posedge clk or posedge rst) begin
-        if (rst) begin
-            {res_low, res_high} <= 64'b0;
-        end else if (state == IDLE && start) begin
-            {res_low, res_high} <= 64'b0;
+            result <= 0;
+        end else if(stage4_valid) begin
+            count_valid <= count_valid + 1;
+            if(stage4_fits) count_result <= count_result + 1;
+            
+            if(count_valid == NUM_REGIONS - 1) begin
+                finished <= 1;
+                result <= count_result + (stage4_fits ? 1 : 0);
+            end
         end
     end
 endmodule

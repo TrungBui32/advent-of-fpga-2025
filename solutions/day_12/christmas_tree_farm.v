@@ -34,17 +34,17 @@ module christmas_tree_farm(
     reg [15:0] stage2_sum_presents1;
     reg [15:0] stage2_sum_presents2;
 
-    reg stage2a_valid;
-    reg [31:0] stage2a_actual_area;
-    reg [31:0] stage2a_sum_presents;
-    reg [11:0] stage2a_pp1;
-
     reg stage3_valid;
-    reg [31:0] stage3_required_area;
     reg [31:0] stage3_actual_area;
+    reg [31:0] stage3_sum_presents;
+    reg [11:0] stage3_pp1;
 
     reg stage4_valid;
-    reg stage4_fits;
+    reg [31:0] stage4_required_area;
+    reg [31:0] stage4_actual_area;
+
+    reg stage5_valid;
+    reg stage5_fits;
 
     assign ready = 1'b1;
 
@@ -105,29 +105,15 @@ module christmas_tree_farm(
 
     always @(posedge clk) begin
         if(rst) begin
-            stage2a_valid <= 0;
-            stage2a_actual_area <= 0;
-            stage2a_sum_presents <= 0;
-        end else begin
-            stage2a_valid <= stage2_valid;
-            if(stage2_valid) begin
-                stage2a_pp1 <= stage2_pp1;
-                stage2a_actual_area <= stage2_pp2 << 4;
-                stage2a_sum_presents <= stage2_sum_presents1 + stage2_sum_presents2;
-            end
-        end
-    end
-
-    always @(posedge clk) begin
-        if(rst) begin
             stage3_valid <= 0;
-            stage3_required_area <= 0;
             stage3_actual_area <= 0;
+            stage3_sum_presents <= 0;
         end else begin
-            stage3_valid <= stage2a_valid; 
-            if(stage2a_valid) begin        
-                stage3_required_area <= (stage2a_sum_presents << 3) + stage2a_sum_presents;
-                stage3_actual_area <= stage2a_actual_area + stage2a_pp1;  
+            stage3_valid <= stage2_valid;
+            if(stage2_valid) begin
+                stage3_pp1 <= stage2_pp1;
+                stage3_actual_area <= stage2_pp2 << 4;
+                stage3_sum_presents <= stage2_sum_presents1 + stage2_sum_presents2;
             end
         end
     end
@@ -135,11 +121,25 @@ module christmas_tree_farm(
     always @(posedge clk) begin
         if(rst) begin
             stage4_valid <= 0;
-            stage4_fits <= 0;
+            stage4_required_area <= 0;
+            stage4_actual_area <= 0;
         end else begin
-            stage4_valid <= stage3_valid;
-            if(stage3_valid) begin
-                stage4_fits <= (stage3_required_area <= stage3_actual_area);
+            stage4_valid <= stage3_valid; 
+            if(stage3_valid) begin        
+                stage4_required_area <= (stage3_sum_presents << 3) + stage3_sum_presents;
+                stage4_actual_area <= stage3_actual_area + stage3_pp1;  
+            end
+        end
+    end
+
+    always @(posedge clk) begin
+        if(rst) begin
+            stage5_valid <= 0;
+            stage5_fits <= 0;
+        end else begin
+            stage5_valid <= stage4_valid;
+            if(stage4_valid) begin
+                stage5_fits <= (stage4_required_area <= stage4_actual_area);
             end
         end
     end
@@ -150,13 +150,13 @@ module christmas_tree_farm(
             count_result <= 0;
             finished <= 0;
             result <= 0;
-        end else if(stage4_valid) begin
+        end else if(stage5_valid) begin
             count_valid <= count_valid + 1;
-            if(stage4_fits) count_result <= count_result + 1;
+            if(stage5_fits) count_result <= count_result + 1;
             
             if(count_valid == NUM_REGIONS - 1) begin
                 finished <= 1;
-                result <= count_result + (stage4_fits ? 1 : 0);
+                result <= count_result + (stage5_fits ? 1 : 0);
             end
         end
     end

@@ -96,8 +96,40 @@ For example, in range `11-22`, the first halves are `1` and `2`, giving us numbe
 **Part 2**: It is basically brute force approach which is not optimal (I guess?) but I still trying to use approach of part 1 in this. 
 
 ### Day 3: [Lobby](https://adventofcode.com/2025/day/3)
-- **Part 1**: 
-- **Part 2**: 
+
+**Part 1**: Conceptually simple problem: for each line of digits, pick two digits (in order) that form the largest possible 2-digit number, then sum across all lines. But mapping this cleanly to hardware ended up being more interesting than expected.
+
+My first instinct was to buffer the whole line and do some kind of selection logic, but that felt wasteful. Instead, I treated each bank as a stream of digits and tried to maintain the best 2-digit combination on the fly.
+
+The core idea is that at any point, I only need to remember the current best pair and compare it against combinations involving the next digit. So the whole design becomes a streaming max-pair problem instead of a sorting problem.
+
+I built a deep pipeline where each stage consumes one digit (4 bits) and conditionally updates the best pair seen so far. Each stage compares the incoming digit against the existing pair and decides whether replacing one or both digits would yield a larger 2-digit number.
+
+By the time the pipeline finishes scanning a line, it has already converged to the maximum valid pair.
+
+One tricky part was merging partial results. When combining two candidate pairs (a, b) and (c, d), you can’t just compare ab and cd. You have to consider all ordered combinations:
+ab, ac, ad, bc, bd, cd.
+
+I implemented this as a small combinational comparison tree that picks the maximum legal pair while preserving order. It looks ugly on paper, but synthesizes nicely I guess.
+
+After that, converting the final digit pair into a decimal number is trivial:
+10a + b, implemented as (a << 3) + (a << 1) + b to avoid multipliers.
+
+Finally, each bank’s result is accumulated into a running sum. A counter tracks how many banks have completed, and once the last one exits the pipeline, the finished flag is asserted.
+
+**Optimizations:**
+- BCD input format allows easy digit extraction without division
+- One digit consumed per pipeline stage
+- Comparison tree instead of nested conditionals
+- Shift-add decimal conversion instead of multiplication
+- One bank processed per cycle after pipeline fill
+- Fixed latency regardless of digit values
+
+**Performance:**
+- **Critical Path**: 1.349ns
+- **Max Frequency**: 650MHz 
+- **Pipeline Depth**: 11 stages
+- **Execution Time**: 2614 cycles (~4.02µs)
 
 ### Day 5: [Cafeteria](https://adventofcode.com/2025/day/5)
 - **Part 1**:

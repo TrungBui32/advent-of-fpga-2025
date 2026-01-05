@@ -13,7 +13,6 @@ module lobby_part1(
     reg [31:0] input_buffer;
     reg [3:0] input_counter;
     reg input_ready;
-    reg [7:0] input_number;
     reg [7:0] current_number;
     reg [31:0] sum;
     reg [31:0] ranges_completed;
@@ -55,16 +54,11 @@ module lobby_part1(
     reg stage10_valid;
     reg [31:0] stage10_number;
 
-    reg [7:0] word_cnt;
-    reg range_ready;
-
     assign ready = 1'b1;
 
     // load
     always @(posedge clk) begin
         if (rst) begin
-            word_cnt <= 0;
-            range_ready <= 0;
             input_ready <= 0;
         end else begin
             input_ready <= 0;

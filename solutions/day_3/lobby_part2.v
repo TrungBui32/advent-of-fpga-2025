@@ -11,160 +11,208 @@ module lobby_part2(
     localparam NUM_DIGITS = 100;  
     localparam SELECT_DIGITS = 12; 
     
-    reg [3:0] input_buffer [0:NUM_DIGITS + 7];
-    reg [7:0] write_ptr;
-    reg [7:0] read_ptr;
-    reg [7:0] total_digits;
-    reg [7:0] remaining;
-    reg [3:0] digit;
+    reg [3:0] input_buffer_A [0:NUM_DIGITS + 7];
+    reg [3:0] input_buffer_B [0:NUM_DIGITS + 7];
+    reg current_write_buffer; 
+    reg [7:0] stage1_write_ptr;
+    reg stage1_buffer_ready; 
     
-    localparam LOAD = 0;
-    localparam PROCESS = 1;
-    localparam CONVERT = 2;
-    localparam SUM = 3;
-
-    reg [2:0] state;
+    reg stage2_active;
+    reg stage2_read_buffer; 
+    reg [7:0] stage2_read_ptr;
+    reg [7:0] stage2_total_digits;
+    reg [7:0] stage2_remaining;
+    reg [47:0] stage2_current_number;
+    reg [3:0] stage2_digits_selected;
+    reg [3:0] stage2_current_digit;
+    reg stage2_done;
     
-    reg [47:0] current_number;
-    reg [3:0] digits_selected;
-    
-    reg [47:0] convert_number;
-    reg [3:0] convert_counter;
-    reg [63:0] temp_shift;
-    reg convert_active;
+    reg stage3_active;
+    reg [47:0] stage3_convert_number;
+    reg [3:0] stage3_convert_counter;
+    reg [63:0] stage3_temp_shift;
+    reg [3:0] stage3_digit;
+    reg stage3_done;
     
     reg [63:0] sum;
     reg [31:0] banks_completed;
 
-    reg [3:0] current_digit;
-    
-    assign ready = (state == LOAD) && (write_ptr[2:0] == 3'b000);
-    
+    assign ready = (stage1_write_ptr < NUM_DIGITS) && !stage1_buffer_ready;
+
     always @(posedge clk) begin
         if (rst) begin
-            write_ptr <= 0;
-            total_digits <= 0;
-            state <= LOAD;
-            read_ptr <= 0;
-            current_number <= 0;
-            digits_selected <= 0;
-            banks_completed <= 0;
-            sum <= 0;
-            finished <= 0;
+            stage1_write_ptr <= 0;
+            current_write_buffer <= 0;
+            stage1_buffer_ready <= 0;
         end else begin
-            case (state)
-                LOAD: begin
-                    if (valid_in && ready) begin
-                        input_buffer[write_ptr + 0] <= data_in[31:28];
-                        input_buffer[write_ptr + 1] <= data_in[27:24];
-                        input_buffer[write_ptr + 2] <= data_in[23:20];
-                        input_buffer[write_ptr + 3] <= data_in[19:16];
-                        input_buffer[write_ptr + 4] <= data_in[15:12];
-                        input_buffer[write_ptr + 5] <= data_in[11:8];
-                        input_buffer[write_ptr + 6] <= data_in[7:4];
-                        input_buffer[write_ptr + 7] <= data_in[3:0];
-                        
-                        write_ptr <= write_ptr + 8;
-                        
-                        if (write_ptr >= ((NUM_DIGITS + 7) / 8) * 8 - 8) begin
-                            total_digits <= ((NUM_DIGITS + 7) / 8) * 8; 
-                            read_ptr <= 0;
-                            current_number <= 0;
-                            digits_selected <= 0;
-                            state <= PROCESS;
-                        end
-                    end
+            if (valid_in && ready) begin
+                if (current_write_buffer == 0) begin
+                    input_buffer_A[stage1_write_ptr + 0] <= data_in[31:28];
+                    input_buffer_A[stage1_write_ptr + 1] <= data_in[27:24];
+                    input_buffer_A[stage1_write_ptr + 2] <= data_in[23:20];
+                    input_buffer_A[stage1_write_ptr + 3] <= data_in[19:16];
+                    input_buffer_A[stage1_write_ptr + 4] <= data_in[15:12];
+                    input_buffer_A[stage1_write_ptr + 5] <= data_in[11:8];
+                    input_buffer_A[stage1_write_ptr + 6] <= data_in[7:4];
+                    input_buffer_A[stage1_write_ptr + 7] <= data_in[3:0];
+                end else begin
+                    input_buffer_B[stage1_write_ptr + 0] <= data_in[31:28];
+                    input_buffer_B[stage1_write_ptr + 1] <= data_in[27:24];
+                    input_buffer_B[stage1_write_ptr + 2] <= data_in[23:20];
+                    input_buffer_B[stage1_write_ptr + 3] <= data_in[19:16];
+                    input_buffer_B[stage1_write_ptr + 4] <= data_in[15:12];
+                    input_buffer_B[stage1_write_ptr + 5] <= data_in[11:8];
+                    input_buffer_B[stage1_write_ptr + 6] <= data_in[7:4];
+                    input_buffer_B[stage1_write_ptr + 7] <= data_in[3:0];
                 end
+                stage1_write_ptr <= stage1_write_ptr + 8;
                 
-                PROCESS: begin
-                    if (read_ptr < total_digits) begin
-                        current_digit = input_buffer[read_ptr];
-                        
-                        remaining = total_digits - read_ptr;
-                        
-                        if (current_digit > current_number[47:44] && remaining >= 12) begin
-                            current_number[47:44] <= current_digit;
-                            current_number[43:0] <= 0;
-                            digits_selected <= 1;
-                        end else if (current_digit > current_number[43:40] && remaining >= 11) begin
-                            current_number[43:40] <= current_digit;
-                            current_number[39:0] <= 0;
-                            digits_selected <= 2;
-                        end else if (current_digit > current_number[39:36] && remaining >= 10) begin
-                            current_number[39:36] <= current_digit;
-                            current_number[35:0] <= 0;
-                            digits_selected <= 3;
-                        end else if (current_digit > current_number[35:32] && remaining >= 9) begin
-                            current_number[35:32] <= current_digit;
-                            current_number[31:0] <= 0;
-                            digits_selected <= 4;
-                        end else if (current_digit > current_number[31:28] && remaining >= 8) begin
-                            current_number[31:28] <= current_digit;
-                            current_number[27:0] <= 0;
-                            digits_selected <= 5;
-                        end else if (current_digit > current_number[27:24] && remaining >= 7) begin
-                            current_number[27:24] <= current_digit;
-                            current_number[23:0] <= 0;
-                            digits_selected <= 6;
-                        end else if (current_digit > current_number[23:20] && remaining >= 6) begin
-                            current_number[23:20] <= current_digit;
-                            current_number[19:0] <= 0;
-                            digits_selected <= 7;
-                        end else if (current_digit > current_number[19:16] && remaining >= 5) begin
-                            current_number[19:16] <= current_digit;
-                            current_number[15:0] <= 0;
-                            digits_selected <= 8;
-                        end else if (current_digit > current_number[15:12] && remaining >= 4) begin
-                            current_number[15:12] <= current_digit;
-                            current_number[11:0] <= 0;
-                            digits_selected <= 9;
-                        end else if (current_digit > current_number[11:8] && remaining >= 3) begin
-                            current_number[11:8] <= current_digit;
-                            current_number[7:0] <= 0;
-                            digits_selected <= 10;
-                        end else if (current_digit > current_number[7:4] && remaining >= 2) begin
-                            current_number[7:4] <= current_digit;
-                            current_number[3:0] <= 0;
-                            digits_selected <= 11;
-                        end else if (current_digit > current_number[3:0] && remaining >= 1) begin
-                            current_number[3:0] <= current_digit;
-                            digits_selected <= 12;
-                        end
-                        
-                        read_ptr <= read_ptr + 1;
-                    end else begin
-                        convert_number <= current_number;
-                        convert_counter <= 0;
-                        temp_shift <= 0;
-                        convert_active <= 1;
-                        state <= CONVERT;
-                        write_ptr <= 0; 
-                    end
+                if (stage1_write_ptr >= ((NUM_DIGITS + 7) / 8) * 8 - 8) begin
+                    stage1_buffer_ready <= 1;
                 end
-                CONVERT: begin
-                    if (convert_active) begin
-                        if (convert_counter < 12) begin
-                            digit = convert_number[47 - (convert_counter*4) -: 4];
-                            temp_shift <= (temp_shift * 10) + digit;
-                            convert_counter <= convert_counter + 1;
-                        end else begin
-                            convert_active <= 0;
-                            state <= SUM;
-                        end
-                    end
-                end
-                SUM: begin
-                    sum <= sum + temp_shift;
-                    banks_completed <= banks_completed + 1;
-
-                    if (banks_completed >= HEIGHT - 1) begin
-                        result <= sum + temp_shift;
-                        finished <= 1;
-                    end else begin
-                        state <= LOAD;
-                    end
-                end
-            endcase
+            end
+            
+            if (stage1_buffer_ready && !stage2_active) begin
+                stage1_buffer_ready <= 0;
+                stage1_write_ptr <= 0;
+                current_write_buffer <= ~current_write_buffer;
+            end
         end
-    end
+    end 
+
+    always @(posedge clk) begin
+        if (rst) begin
+            stage2_active <= 0;
+            stage2_read_ptr <= 0;
+            stage2_total_digits <= 0;
+            stage2_current_number <= 0;
+            stage2_digits_selected <= 0;
+            stage2_done <= 0;
+            stage2_read_buffer <= 0;
+        end else begin
+            if (!stage2_active && stage1_buffer_ready) begin
+                stage2_active <= 1;
+                stage2_read_ptr <= 0;
+                stage2_total_digits <= ((NUM_DIGITS + 7) / 8) * 8;
+                stage2_current_number <= 0;
+                stage2_digits_selected <= 0;
+                stage2_done <= 0;
+                stage2_read_buffer <= current_write_buffer;
+            end else if (stage2_active && !stage2_done) begin
+                if (stage2_read_ptr < stage2_total_digits) begin
+                    if (stage2_read_buffer == 0) begin
+                        stage2_current_digit = input_buffer_A[stage2_read_ptr];
+                    end else begin
+                        stage2_current_digit = input_buffer_B[stage2_read_ptr];
+                    end
+                    
+                    stage2_remaining = stage2_total_digits - stage2_read_ptr;
+                    
+                    if (stage2_current_digit > stage2_current_number[47:44] && stage2_remaining >= 12) begin
+                        stage2_current_number[47:44] <= stage2_current_digit;
+                        stage2_current_number[43:0] <= 0;
+                        stage2_digits_selected <= 1;
+                    end else if (stage2_current_digit > stage2_current_number[43:40] && stage2_remaining >= 11) begin
+                        stage2_current_number[43:40] <= stage2_current_digit;
+                        stage2_current_number[39:0] <= 0;
+                        stage2_digits_selected <= 2;
+                    end else if (stage2_current_digit > stage2_current_number[39:36] && stage2_remaining >= 10) begin
+                        stage2_current_number[39:36] <= stage2_current_digit;
+                        stage2_current_number[35:0] <= 0;
+                        stage2_digits_selected <= 3;
+                    end else if (stage2_current_digit > stage2_current_number[35:32] && stage2_remaining >= 9) begin
+                        stage2_current_number[35:32] <= stage2_current_digit;
+                        stage2_current_number[31:0] <= 0;
+                        stage2_digits_selected <= 4;
+                    end else if (stage2_current_digit > stage2_current_number[31:28] && stage2_remaining >= 8) begin
+                        stage2_current_number[31:28] <= stage2_current_digit;
+                        stage2_current_number[27:0] <= 0;
+                        stage2_digits_selected <= 5;
+                    end else if (stage2_current_digit > stage2_current_number[27:24] && stage2_remaining >= 7) begin
+                        stage2_current_number[27:24] <= stage2_current_digit;
+                        stage2_current_number[23:0] <= 0;
+                        stage2_digits_selected <= 6;
+                    end else if (stage2_current_digit > stage2_current_number[23:20] && stage2_remaining >= 6) begin
+                        stage2_current_number[23:20] <= stage2_current_digit;
+                        stage2_current_number[19:0] <= 0;
+                        stage2_digits_selected <= 7;
+                    end else if (stage2_current_digit > stage2_current_number[19:16] && stage2_remaining >= 5) begin
+                        stage2_current_number[19:16] <= stage2_current_digit;
+                        stage2_current_number[15:0] <= 0;
+                        stage2_digits_selected <= 8;
+                    end else if (stage2_current_digit > stage2_current_number[15:12] && stage2_remaining >= 4) begin
+                        stage2_current_number[15:12] <= stage2_current_digit;
+                        stage2_current_number[11:0] <= 0;
+                        stage2_digits_selected <= 9;
+                    end else if (stage2_current_digit > stage2_current_number[11:8] && stage2_remaining >= 3) begin
+                        stage2_current_number[11:8] <= stage2_current_digit;
+                        stage2_current_number[7:0] <= 0;
+                        stage2_digits_selected <= 10;
+                    end else if (stage2_current_digit > stage2_current_number[7:4] && stage2_remaining >= 2) begin
+                        stage2_current_number[7:4] <= stage2_current_digit;
+                        stage2_current_number[3:0] <= 0;
+                        stage2_digits_selected <= 11;
+                    end else if (stage2_current_digit > stage2_current_number[3:0] && stage2_remaining >= 1) begin
+                        stage2_current_number[3:0] <= stage2_current_digit;
+                        stage2_digits_selected <= 12;
+                    end
+                    
+                    stage2_read_ptr <= stage2_read_ptr + 1;
+                end else begin
+                    stage2_done <= 1;
+                end
+            end else if (stage2_done && !stage3_active) begin
+                stage2_done <= 0;
+                stage2_active <= 0;
+            end
+        end
+    end 
+
+    always @(posedge clk) begin
+        if (rst) begin
+            stage3_active <= 0;
+            stage3_convert_counter <= 0;
+            stage3_temp_shift <= 0;
+            stage3_done <= 0;
+        end else begin
+            if (!stage3_active && stage2_done) begin
+                stage3_active <= 1;
+                stage3_convert_number <= stage2_current_number;
+                stage3_convert_counter <= 0;
+                stage3_temp_shift <= 0;
+                stage3_done <= 0;
+            end
+            else if (stage3_active && !stage3_done) begin
+                if (stage3_convert_counter < 12) begin
+                    stage3_digit = stage3_convert_number[47 - (stage3_convert_counter*4) -: 4];
+                    stage3_temp_shift <= (stage3_temp_shift * 10) + stage3_digit;
+                    stage3_convert_counter <= stage3_convert_counter + 1;
+                end else begin
+                    stage3_done <= 1;
+                end
+            end
+            else if (stage3_done) begin
+                stage3_done <= 0;
+                stage3_active <= 0;
+            end
+        end
+    end 
+
+    always @(posedge clk) begin
+        if (rst) begin
+            sum <= 0;
+            banks_completed <= 0;
+            finished <= 0;
+            result <= 0;
+        end else begin
+            if (stage3_done) begin
+                sum <= sum + stage3_temp_shift;
+                banks_completed <= banks_completed + 1;
+                if (banks_completed >= HEIGHT - 1) begin
+                    result <= sum + stage3_temp_shift;
+                    finished <= 1;
+                end
+            end
+        end
+    end 
 endmodule

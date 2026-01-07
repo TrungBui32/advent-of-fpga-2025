@@ -170,8 +170,25 @@ The cascaded comparison structure efficiently finds the best position for each n
 
 
 ### Day 5: [Cafeteria](https://adventofcode.com/2025/day/5)
-- **Part 1**:
-- **Part 2**:
+
+**Part 1**: My goal here was to maximize throughput while maintaining a clean pipeline structure. I used a 32-bit input interface with AXI-like handshaking (valid/ready signals). My solution is a bit tricky as I preloaded ranges into program :) but generally it is quite simple and straightforword.
+
+Since each ingredient ID is 50 bits wide, the testbench streams each ID over 2 clock cycles (32 bits + 18 bits). The module continuously accepts input while simultaneously processing previously received IDs through the comparison pipeline.
+
+The pipeline has 4 stages (not counting input reception):
+- 1 stage to assemble the complete 50-bit ID
+- 1 stage for parallel range comparisons (182 comparisons)
+- 1 stage for AND operations to determine range membership
+- 1 stage for result accumulation
+
+**Optimizations:**
+- Parallel comparison across all 182 ranges using generate blocks
+- Single-cycle OR reduction to check any-range membership
+
+**Performance:**
+- **Critical Path**: 1.979ns
+- **Max Frequency**: ~455 MHz
+- **Execution Time**: 2,006 cycles (~4.41µs)
 
 ### Day 6: [Trash Compactor](https://adventofcode.com/2025/day/6)
 - **Part 1**: 

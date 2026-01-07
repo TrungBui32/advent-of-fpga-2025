@@ -2,6 +2,14 @@ import cocotb
 from cocotb.triggers import RisingEdge
 from cocotb.clock import Clock
 
+def decimal_to_bcd(value):
+    bcd = 0
+    for i in range(4):
+        digit = value % 10
+        bcd |= (digit << (i * 4))
+        value //= 10
+    return bcd
+
 def parse_input(filename):
     with open(filename, 'r') as f:
         lines = f.readlines()
@@ -61,8 +69,14 @@ def parse_input(filename):
     return problems
 
 def encode_problem_to_words(line1, line2, line3, line4, op):
-    word1 = (line2 << 16) | line1
-    word2 = (line4 << 16) | line3
+    bcd1 = decimal_to_bcd(line1)
+    bcd2 = decimal_to_bcd(line2)
+    bcd3 = decimal_to_bcd(line3)
+    bcd4 = decimal_to_bcd(line4)
+    
+    word1 = (bcd2 << 16) | bcd1
+    word2 = (bcd4 << 16) | bcd3
+    
     return word1, word2, op
 
 def read_and_chunk_input(filename):

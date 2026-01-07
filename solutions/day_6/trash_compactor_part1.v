@@ -1,254 +1,171 @@
 module trash_compactor_part1 (
     input clk,
     input rst,
-    input [31:0] data_in,
+    input [31:0] data_in,  
+    input op,
     input valid_in,
     output ready,
     output reg finished,
     output reg [63:0] result  
 );
     localparam DATA_WIDTH = 16;
-    localparam NUM_ELEMENTS = 1000;  
     localparam RESULT_WIDTH = 64;
-    localparam PARALLEL = 10; 
+    localparam NUM_ELEMENTS = 1000;
+    localparam CHUNK1 = 1'b0;
+    localparam CHUNK2 = 1'b1;
     
-    reg [DATA_WIDTH-1:0] line1 [0:NUM_ELEMENTS-1];
-    reg [DATA_WIDTH-1:0] line2 [0:NUM_ELEMENTS-1];
-    reg [DATA_WIDTH-1:0] line3 [0:NUM_ELEMENTS-1];
-    reg [DATA_WIDTH-1:0] line4 [0:NUM_ELEMENTS-1];
-    reg op [0:NUM_ELEMENTS-1];
+    reg word_cnt;
+    reg [63:0] buffer;
+    reg input_ready;
+    reg buffer_op;
     
-    reg [1:0] state;
-    reg [15:0] idx [0:PARALLEL-1];
-    reg [RESULT_WIDTH-1:0] sum_accumulator;
-    
-    reg [RESULT_WIDTH-1:0] stage1_results [0:PARALLEL-1];
     reg stage1_valid;
+    reg [DATA_WIDTH-1:0] stage1_line1;
+    reg [DATA_WIDTH-1:0] stage1_line2;
+    reg [DATA_WIDTH-1:0] stage1_line3;
+    reg [DATA_WIDTH-1:0] stage1_line4;
+    reg stage1_op;
     
-    reg [RESULT_WIDTH-1:0] stage2_sum;
     reg stage2_valid;
-
-    reg [DATA_WIDTH-1:0] pipeline_line1 [0:PARALLEL-1];
-    reg [DATA_WIDTH-1:0] pipeline_line2 [0:PARALLEL-1];
-    reg [DATA_WIDTH-1:0] pipeline_line3 [0:PARALLEL-1];
-    reg [DATA_WIDTH-1:0] pipeline_line4 [0:PARALLEL-1];
-    reg pipeline_op [0:PARALLEL-1];
-    reg [15:0] pipeline_idx [0:PARALLEL-1][0:1];
-    reg pipeline_valid;
-
-    reg [RESULT_WIDTH-1:0] stage1a_results [0:PARALLEL-1];
-    reg [RESULT_WIDTH-1:0] stage1b_results [0:PARALLEL-1];
-    reg stage1a_valid, stage1b_valid;
-
-    reg pipeline_op_stage1a [0:PARALLEL-1];
-    reg pipeline_op_stage1b [0:PARALLEL-1];
+    reg [RESULT_WIDTH-1:0] stage2_result1;
+    reg [DATA_WIDTH-1:0] stage2_line3;
+    reg [DATA_WIDTH-1:0] stage2_line4;
+    reg stage2_op;
     
-    reg [DATA_WIDTH-1:0] pipeline_line3_stage1a [0:PARALLEL-1];
-    reg [DATA_WIDTH-1:0] pipeline_line4_stage1a [0:PARALLEL-1];
-    reg [DATA_WIDTH-1:0] pipeline_line4_stage1b [0:PARALLEL-1];
+    reg stage3_valid;
+    reg [RESULT_WIDTH-1:0] stage3_result2;
+    reg [DATA_WIDTH-1:0] stage3_line4;
+    reg stage3_op;
     
-    localparam IDLE = 2'd0;
-    localparam RUNNING = 2'd1;
-    localparam DRAIN = 2'd2;
-    localparam DONE = 2'd3;
-
-    initial begin
-        $readmemh("line1_1.mem", line1);
-        $readmemh("line2_1.mem", line2);
-        $readmemh("line3_1.mem", line3);
-        $readmemh("line4_1.mem", line4);
-        $readmemh("op.mem", op);
-    end
-
-    wire [RESULT_WIDTH-1:0] tree_level1 [0:4];  
-    wire [RESULT_WIDTH-1:0] tree_level2 [0:1];  
-    wire [RESULT_WIDTH-1:0] tree_level3;        
-    wire [RESULT_WIDTH-1:0] parallel_sum;
+    reg stage4_valid;
+    reg [RESULT_WIDTH-1:0] stage4_final;
     
-    genvar g;
-    generate
-        for (g = 0; g < 5; g = g + 1) begin : gen_tree_level1
-            assign tree_level1[g] = stage1_results[g*2] + stage1_results[g*2+1];
+    reg [RESULT_WIDTH-1:0] sum_accumulator;
+    reg [31:0] count_valid;
+    
+    assign ready = 1'b1;
+    
+    function [15:0] bcd_to_binary;
+        input [15:0] bcd;
+        reg [3:0] d3, d2, d1, d0;
+        begin
+            d3 = bcd[15:12];
+            d2 = bcd[11:8];
+            d1 = bcd[7:4];
+            d0 = bcd[3:0];
+            if(d2 == 0 && d1 == 0 && d0 == 0) begin
+                bcd_to_binary = d3;
+            end else if(d1 == 0 && d0 == 0) begin
+                bcd_to_binary = d3 * 10 + d2;
+            end else if(d0 == 0) begin
+                bcd_to_binary = d3 * 100 + d2 * 10 + d1;
+            end else begin
+                bcd_to_binary = d3 * 1000 + d2 * 100 + d1 * 10 + d0;
+            end
         end
-        for (g = 0; g < 2; g = g + 1) begin : gen_tree_level2
-            assign tree_level2[g] = tree_level1[g*2] + tree_level1[g*2+1];
-        end
-        assign tree_level3 = tree_level2[0] + tree_level2[1];
-        assign parallel_sum = tree_level3 + tree_level1[4];
-    endgenerate
-
-    integer i;
-    always @(posedge clk or posedge rst) begin
+    endfunction
+    
+    always @(posedge clk) begin
         if (rst) begin
-            state <= IDLE;
-            for (i = 0; i < PARALLEL; i = i + 1) idx[i] <= 0;
-            sum_accumulator <= 0;
+            word_cnt <= CHUNK1;
+            input_ready <= 0;
+            buffer <= 64'b0;
+            buffer_op <= 0;
+        end else begin
+            input_ready <= 0;
+            if (valid_in) begin
+                if (word_cnt == CHUNK1) begin
+                    buffer[31:0] <= data_in;
+                    buffer_op <= op;
+                    word_cnt <= CHUNK2;
+                end else begin
+                    buffer[63:32] <= data_in;
+                    word_cnt <= CHUNK1;
+                    input_ready <= 1;
+                end
+            end
+        end
+    end
+    
+    always @(posedge clk) begin
+        if (rst) begin
             stage1_valid <= 0;
+        end else begin
+            stage1_valid <= input_ready;
+            if (input_ready) begin
+                stage1_line1 <= bcd_to_binary(buffer[15:0]);
+                stage1_line2 <= bcd_to_binary(buffer[31:16]);
+                stage1_line3 <= bcd_to_binary(buffer[47:32]);
+                stage1_line4 <= bcd_to_binary(buffer[63:48]);
+                stage1_op <= buffer_op;
+            end
+        end
+    end
+    
+    always @(posedge clk) begin
+        if (rst) begin
             stage2_valid <= 0;
+            stage2_result1 <= 0;
+        end else begin
+            stage2_valid <= stage1_valid;
+            if (stage1_valid) begin
+                if (stage1_op == 1'b0)
+                    stage2_result1 <= stage1_line1 * stage1_line2;
+                else
+                    stage2_result1 <= stage1_line1 + stage1_line2;
+                stage2_line3 <= stage1_line3;
+                stage2_line4 <= stage1_line4;
+                stage2_op <= stage1_op;
+            end
+        end
+    end
+    
+    always @(posedge clk) begin
+        if (rst) begin
+            stage3_valid <= 0;
+            stage3_result2 <= 0;
+        end else begin
+            stage3_valid <= stage2_valid;
+            if (stage2_valid) begin
+                if (stage2_op == 1'b0)
+                    stage3_result2 <= stage2_result1 * stage2_line3;
+                else
+                    stage3_result2 <= stage2_result1 + stage2_line3;
+                stage3_line4 <= stage2_line4;
+                stage3_op <= stage2_op;
+            end
+        end
+    end
+    
+    always @(posedge clk) begin
+        if (rst) begin
+            stage4_valid <= 0;
+            stage4_final <= 0;
+        end else begin
+            stage4_valid <= stage3_valid;
+            if (stage3_valid) begin
+                if (stage3_op == 1'b0)
+                    stage4_final <= stage3_result2 * stage3_line4;
+                else
+                    stage4_final <= stage3_result2 + stage3_line4;
+            end
+        end
+    end
+    
+    always @(posedge clk) begin
+        if (rst) begin
+            sum_accumulator <= 0;
+            count_valid <= 0;
             finished <= 0;
             result <= 0;
-            pipeline_valid <= 0;
-            stage1a_valid <= 0;
-            stage1b_valid <= 0;
-        end else begin
-            case (state)
-                IDLE: begin
-                    if (start) begin
-                        state <= RUNNING;
-                        for (i = 0; i < PARALLEL; i = i + 1) idx[i] <= i;
-                        sum_accumulator <= 0;
-                        stage1_valid <= 0;
-                        stage2_valid <= 0;
-                        finished <= 0;
-                    end
-                end
-                RUNNING: begin
-                    // read mem
-                    if (idx[0] < NUM_ELEMENTS) begin
-                        for (i = 0; i < PARALLEL; i = i + 1) begin
-                            if (idx[i] < NUM_ELEMENTS) begin
-                                pipeline_line1[i] <= line1[idx[i]];
-                                pipeline_line2[i] <= line2[idx[i]];
-                                pipeline_line3[i] <= line3[idx[i]];
-                                pipeline_line4[i] <= line4[idx[i]];
-                                pipeline_op[i] <= op[idx[i]];
-                            end else begin
-                                pipeline_line1[i] <= 0;
-                                pipeline_line2[i] <= 0;
-                                pipeline_line3[i] <= 0;
-                                pipeline_line4[i] <= 0;
-                                pipeline_op[i] <= 0;
-                            end
-                        end
-                        pipeline_valid <= 1;
-                        for (i = 0; i < PARALLEL; i = i + 1) 
-                            idx[i] <= idx[i] + PARALLEL;
-                    end else begin
-                        pipeline_valid <= 0;
-                        state <= DRAIN;
-                    end
-                    
-                    // first op
-                    if (pipeline_valid) begin
-                        for (i = 0; i < PARALLEL; i = i + 1) begin
-                            if (pipeline_op[i] == 1'b0) begin 
-                                stage1a_results[i] <= pipeline_line1[i] * pipeline_line2[i];
-                            end else begin  
-                                stage1a_results[i] <= pipeline_line1[i] + pipeline_line2[i];
-                            end
-                            pipeline_op_stage1a[i] <= pipeline_op[i];
-                            pipeline_line3_stage1a[i] <= pipeline_line3[i];
-                            pipeline_line4_stage1a[i] <= pipeline_line4[i];
-                        end
-                        stage1a_valid <= 1;
-                    end else begin
-                        stage1a_valid <= 0;
-                    end
-                    // second op
-                    if (stage1a_valid) begin
-                        for (i = 0; i < PARALLEL; i = i + 1) begin
-                            if (pipeline_op_stage1a[i] == 1'b0) begin 
-                                stage1b_results[i] <= stage1a_results[i] * pipeline_line3_stage1a[i];
-                            end else begin  
-                                stage1b_results[i] <= stage1a_results[i] + pipeline_line3_stage1a[i];
-                            end
-                            pipeline_op_stage1b[i] <= pipeline_op_stage1a[i];  
-                            pipeline_line4_stage1b[i] <= pipeline_line4_stage1a[i];
-                        end
-                        stage1b_valid <= 1; 
-                    end else begin
-                        stage1b_valid <= 0;  
-                    end
-                    // third op
-                    if (stage1b_valid) begin
-                        for (i = 0; i < PARALLEL; i = i + 1) begin
-                            if (pipeline_op_stage1b[i] == 1'b0) begin 
-                                stage1_results[i] <= stage1b_results[i] * pipeline_line4_stage1b[i];
-                            end else begin  
-                                stage1_results[i] <= stage1b_results[i] + pipeline_line4_stage1b[i];
-                            end
-                        end
-                        stage1_valid <= 1;  
-                    end else begin
-                        stage1_valid <= 0;  
-                    end
-                    
-                    if (stage1_valid) begin
-                        stage2_sum <= parallel_sum;
-                        stage2_valid <= 1;
-                    end else begin
-                        stage2_valid <= 0;
-                    end
-                    
-                    if (stage2_valid) begin
-                        sum_accumulator <= sum_accumulator + stage2_sum;
-                    end
-                end
-                DRAIN: begin
-                    if (pipeline_valid) begin
-                        for (i = 0; i < PARALLEL; i = i + 1) begin
-                            if (pipeline_op[i] == 1'b0) begin 
-                                stage1a_results[i] <= pipeline_line1[i] * pipeline_line2[i];
-                            end else begin  
-                                stage1a_results[i] <= pipeline_line1[i] + pipeline_line2[i];
-                            end
-                            pipeline_op_stage1a[i] <= pipeline_op[i];
-                            pipeline_line3_stage1a[i] <= pipeline_line3[i];
-                            pipeline_line4_stage1a[i] <= pipeline_line4[i];
-                        end
-                        stage1a_valid <= 1;
-                    end else begin
-                        stage1a_valid <= 0;
-                    end
-
-                    if (stage1a_valid) begin
-                        for (i = 0; i < PARALLEL; i = i + 1) begin
-                            if (pipeline_op_stage1a[i] == 1'b0) begin 
-                                stage1b_results[i] <= stage1a_results[i] * pipeline_line3_stage1a[i];
-                            end else begin  
-                                stage1b_results[i] <= stage1a_results[i] + pipeline_line3_stage1a[i];
-                            end
-                            pipeline_op_stage1b[i] <= pipeline_op_stage1a[i];
-                            pipeline_line4_stage1b[i] <= pipeline_line4_stage1a[i];
-                        end
-                        stage1b_valid <= 1;
-                    end else begin
-                        stage1b_valid <= 0;
-                    end
-
-                    if (stage1b_valid) begin
-                        for (i = 0; i < PARALLEL; i = i + 1) begin
-                            if (pipeline_op_stage1b[i] == 1'b0) begin 
-                                stage1_results[i] <= stage1b_results[i] * pipeline_line4_stage1b[i];
-                            end else begin  
-                                stage1_results[i] <= stage1b_results[i] + pipeline_line4_stage1b[i];
-                            end
-                        end
-                        stage1_valid <= 1;
-                    end else begin
-                        stage1_valid <= 0;
-                    end
-                    
-                    if (stage1_valid) begin
-                        stage2_sum <= parallel_sum;
-                        stage2_valid <= 1;
-                    end else begin
-                        stage2_valid <= 0;
-                    end
-                    
-                    if (stage2_valid) begin
-                        sum_accumulator <= sum_accumulator + stage2_sum;
-                    end
-                    
-                    if (!pipeline_valid && !stage1a_valid && !stage1b_valid && !stage1_valid && !stage2_valid) begin
-                        state <= DONE;
-                    end
-                end
-                DONE: begin
-                    result <= sum_accumulator;
-                    finished <= 1;
-                end
-            endcase
+        end else if (stage4_valid) begin
+            sum_accumulator <= sum_accumulator + stage4_final;
+            count_valid <= count_valid + 1;
+            
+            if (count_valid == NUM_ELEMENTS - 1) begin
+                finished <= 1;
+                result <= sum_accumulator + stage4_final;
+            end
         end
     end
 endmodule

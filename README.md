@@ -131,6 +131,44 @@ Finally, each bank’s result is accumulated into a running sum. A counter track
 - **Pipeline Depth**: 11 stages
 - **Execution Time**: 2614 cycles (~4.02µs)
 
+
+**Part 2**:  This is not much harder version of Part 1 but hard to optimize (one reason is I want to use 32-bit data in so the number of cycle each state is different). Instead of picking 2 digits to form the largest 2-digit number, I now need to pick 12 digits from each bank to form the largest 12-digit number.
+The challenge is figuring out which 12 digits to keep. The key insight is that I want to build the number left-to-right, always trying to put the biggest possible digit in each position. But there's a constraint: I can only pick a digit if there are still enough digits left after it to complete our 12-digit number.
+For example, if I're looking at a bank like 987654321111111 and I've already selected 10 digits, I need at least 2 more digits. So I can only consider digits that have at least 2 digits remaining after them (including themselves).
+The algorithm works like this: scan through the digits one by one, and whenever I find a digit that's larger than what I currently have in a position AND there are enough digits remaining, I update our selection. If I replace an earlier position with a better digit, I throw away everything after it and start fresh from there.
+My implementation uses a three-stage pipelined architecture:
+Stage 1 (Input Buffering): Uses ping pong buffers that alternate roles. While one buffer receives incoming digits from the input stream (8 BCD digits per 32-bit word), the other buffer feeds digits to Stage 2 for processing. When Stage 1 finishes filling a buffer and Stage 2 finishes reading the previous buffer, they swap roles. This keeps the pipeline moving without stalls.
+
+Stage 2 (Digit Selection): This is where the main logic lives. It maintains a 48-bit register that holds our current best 12-digit number (4 bits per digit). As each new digit arrives, the stage asks: "Can this digit improve my number?"
+It checks all 12 positions from left to right:
+
+Position 0: Is this digit bigger than my first digit? And are there at least 12 digits left (including this one)?
+Position 1: If not position 0, is this digit bigger than my second digit? And are there at least 11 digits left?
+...and so on through position 11.
+
+When I find a position where the new digit is better AND I have enough digits remaining, I put the new digit there and clear everything to the right (since I're building a new number from this point forward).
+For the example 987654321111111: I scan left to right, keep the 9, then keep the 8, then the 7, and so on. 
+
+Stage 3 (BCD to Binary Conversion): The 12 selected digits are in BCD format (4 bits each), but I need a standard binary number for arithmetic. This stage converts by processing one digit at a time: multiply the current result by 10 and add the next digit. After 12 iterations, I have our binary number.
+The multiplication by 10 is implemented as (value << 3) + (value << 1) which is equivalent to value × 8 + value × 2 = value × 10, avoiding hardware multipliers.
+
+I scan left-to-right, so I naturally prioritize larger digits in higher-value positions
+The "remaining digits" check ensures I can always complete a valid 12-digit number
+Once I place a large digit early, I only consider digits that come after it (maintaining order)
+The cascaded comparison structure efficiently finds the best position for each new digit
+
+**Optimizations:**
+- Double-buffering enables overlapped input/processing
+- BCD input format simplifies digit extraction
+- Shift-add multiplication avoids dedicated multiplier units
+
+**Performance:**
+- **Critical Path**: 3.658ns
+- **Max Frequency**: 250MHz 
+- **Pipeline Depth**: 3 stages
+- **Execution Time**: 21430 cycles (~85.72µs)
+
+
 ### Day 5: [Cafeteria](https://adventofcode.com/2025/day/5)
 - **Part 1**:
 - **Part 2**:

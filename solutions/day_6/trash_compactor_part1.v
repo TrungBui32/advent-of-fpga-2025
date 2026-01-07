@@ -1,7 +1,9 @@
 module trash_compactor_part1 (
     input clk,
     input rst,
-    input start,
+    input [31:0] data_in,
+    input valid_in,
+    output ready,
     output reg finished,
     output reg [63:0] result  
 );

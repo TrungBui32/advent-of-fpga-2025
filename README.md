@@ -190,6 +190,26 @@ The pipeline has 4 stages (not counting input reception):
 - **Max Frequency**: ~455 MHz
 - **Execution Time**: 2,006 cycles (~4.41µs)
 
+**Part 2**: The problem shifts from checking individual IDs against ranges to computing the total count of unique IDs covered by all ranges. This requires merging overlapping and adjacent ranges before counting. In addition, this implimentation is not something realistic so I don't show the performance here.
+
+The solution uses a pure computational approach with no streaming input - all 182 ranges are loaded from memory at initialization. The algorithm proceeds through three phases:
+
+Pipeline Stages:
+1. SORT: Bubble sort to order ranges by start position
+   - Optimized with early termination when no swaps occur
+   - Compares adjacent ranges and swaps when out of order
+2. MERGE: Combine overlapping/adjacent ranges
+   - Walks through sorted ranges sequentially
+   - Extends current range when overlap detected (start ≤ previous_end + 1)
+   - Marks merged ranges as invalid to avoid double-counting
+3. SUM: Count total IDs across all valid merged ranges
+   - Adds up (end - start + 1) for each valid range
+
+**Key Design Decisions:**
+- In-place merging by extending ranges and marking absorbed ranges as invalid
+- The `+1` check handles both overlapping ranges and adjacent ranges that should merge
+
+
 ### Day 6: [Trash Compactor](https://adventofcode.com/2025/day/6)
 - **Part 1**: 
 - **Part 2**:

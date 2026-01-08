@@ -1,6 +1,8 @@
 # Advent of FPGA 2025
 
-A collection of Verilog solutions based on Advent of Code 2025 problems implemented for [Advent of FPGA](https://blog.janestreet.com/advent-of-fpga-challenge-2025/). My target hardware is KV260 (K26C SOM) although I don't really have any board. To explain, I chose CocoTB in this challenge simply because I used it before, I see that I need to process input at first, and I just need the final answer, I don't think anything better than CocoTB in this context.
+A collection of Verilog solutions based on Advent of Code 2025 problems implemented for [Advent of FPGA](https://blog.janestreet.com/advent-of-fpga-challenge-2025/). My language and tools are Verilog, CocoTB, and Makefile. 
+
+To explain, I chose CocoTB in this challenge simply because I used it before, I see that I need to process input at first, and I just need the final answer, I don't think anything better than CocoTB in this context.
 
 ## How to run
 
@@ -16,6 +18,8 @@ All solutions follow a consistent build system using Makefiles. To run any day's
 cd day_X
 make
 ```
+
+Because each day has 2 part, I set default is part 1. To run part 2 test, just simply change the name of the VERILOG_SOURCES and TOPLEVEL in Makefile from 1 to 2. There is an exception (day 5) that separate 2 folders for part 1 and part 2 as their input incompatibility. 
 
 **Input Handling**: Raw input data is stored in `input.txt` files.
 
@@ -211,8 +215,43 @@ Pipeline Stages:
 
 
 ### Day 6: [Trash Compactor](https://adventofcode.com/2025/day/6)
-- **Part 1**: 
-- **Part 2**:
+- **Part 1**: This problem is optimally solved using BCD encoding. The testbench drives inputs as BCD, with each problem containing 4 rows of values plus an operation sign. I transfer each problem over 2 cycles, with each cycle carrying two 16-bit BCD values (supporting up to 4 digits per value). A separate op input signal indicates the operation (multiply or add).A key insight: the input contains no zero digits at all, which greatly simplifies the bcd_to_binary conversion function. I can determine the actual value by checking which digit positions are non-zero, eliminating the need for complex zero-handling logic. For multiplication, rather than using an expensive 32×32 combinational multiplier, I implemented a Karatsuba-like algorithm across multiple pipeline stages. This decomposes the 32×32 multiplication into four 16×16 multiplications, significantly reducing the critical path.
+
+Input Stage: Buffers two 32-bit words into a 64-bit register containing four 16-bit BCD values
+Stage 1: BCD to binary conversion for all four numbers in parallel
+Stage 2: First level operations - multiply or add pairs (line1×line2, line3×line4)
+Stage 3: For multiplication, split 32-bit results into high/low 16-bit parts for Karatsuba decomposition
+Stage 4: Compute partial products (HH, HL, LH, LL) or pass through addition result
+Stage 5: Shift partial products to correct bit positions (HH<<32, HL<<16, LH<<16, LL)
+Stage 6: Sum all partial products to get final 64-bit result
+Accumulator: Maintains running sum across all 1000 problems
+
+**Optimizations:**
+- BCD to binary conversion handles 1-4 digit numbers efficiently in a single function
+- Karatsuba-like multiplication algorithm breaks 32×32 multiplication into four 16×16 operations
+- Separate fast path for addition bypasses multiplication stages
+- Bit shifts replace multiplication for positioning partial products
+
+**Performance:**
+- **Critical Path**: 3.326ns
+- **Max Frequency**: ~295MHz   
+- **Execution Time**: 2,010 cycles (6.834µs)
+
+- **Part 2**: With my implimentation, part 2 is like 80% similar to part 1. The differences are just truncating the input buffer and handling some additional zero edge cases. 
+
+Input Stage: Buffers two 32-bit words into a 64-bit register containing four 16-bit BCD values
+Stage 1: BCD-to-binary conversion reading digits column-wise-extracts nibbles at positions [3:0], [19:16], [35:32], [51:48] for the first number, [7:4], [23:20], [39:36], [55:52] for the second, etc., to form numbers from right-to-left columns
+Stage 2: First-level operations with zero-handling for multiplication (if one operand is 0, return the other; if both are 0, return 1 as identity) or add pairs for addition
+Stage 3: For multiplication, split 32-bit results into high/low 16-bit parts for Karatsuba decomposition; for addition, sum the pairs
+Stage 4: Compute Karatsuba partial products (HH, HL, LH, LL) or pass through addition result
+Stage 5: Shift partial products to correct bit positions (HH<<32, HL<<16, LH<<16)
+Stage 6: Sum all partial products to produce final 64-bit result
+Accumulator: Maintains running sum across all 1000 problems
+
+**Performance:**
+- **Critical Path**: 3.396ns
+- **Max Frequency**: ~285MHz
+- **Execution Time**: 2,010 cycles (7.035µs)
 
 ### Day 8: [Playground](https://adventofcode.com/2025/day/8)
 - **Part 1**: 

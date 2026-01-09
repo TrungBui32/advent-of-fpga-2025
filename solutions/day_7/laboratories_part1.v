@@ -1,128 +1,208 @@
 module laboratories_part1(
     input clk,
     input rst,
-    input start,
+    input [31:0] data_in,  
+    input valid_in,
+    output ready,
     output reg finished,
     output reg [31:0] result
 );
-    localparam HEIGHT = 141;
+    localparam HEIGHT = 142;
     localparam WIDTH = 141;
     localparam MIDDLE = 70;
-    localparam PIPELINE_DEPTH = 6;
 
-    localparam IDLE = 2'd0;
-    localparam RUNNING = 2'd1;
-    localparam DRAINING = 2'd2;
-    localparam DONE = 2'd3;
+    reg [2:0] chunk_cnt;
+    reg [140:0] row_buffer;
+    reg row_complete;
 
-    reg [WIDTH-1:0] map [0:HEIGHT-1];
-    reg [WIDTH-1:0] previous_path;
-    wire [WIDTH-1:0] next_path;
-    wire [WIDTH-1:0] splits;
+    reg stage1_valid;
+    reg [WIDTH-1:0] stage1_row_data;
     
-    reg [1:0] level1 [0:70];
-    reg [2:0] level2 [0:35];
-    reg [3:0] level3 [0:17];
-    reg [4:0] level4 [0:8];
-    reg [5:0] level5 [0:2];   
-    reg [6:0] level6;   
+    reg stage2_valid;
+    reg [WIDTH-1:0] stage2_splits;
+    reg [WIDTH-1:0] stage2_next_beams;
     
+    reg stage3_valid;
+    reg [1:0] stage3_level1 [0:70];
+    
+    reg stage4_valid;
+    reg [2:0] stage4_level2 [0:35];
+    
+    reg stage5_valid;
+    reg [3:0] stage5_level3 [0:17];
+    
+    reg stage6_valid;
+    reg [4:0] stage6_level4 [0:8];
+    
+    reg stage7_valid;
+    reg [5:0] stage7_level5 [0:2];
+    
+    reg stage8_valid;
+    reg [6:0] stage8_level6;
+    
+    reg [WIDTH-1:0] current_beams;
+    
+    reg [7:0] rows_processed;
     reg [31:0] sum;
-    reg [7:0] y;
-    reg [7:0] cycle_count;
-    reg [1:0] state;
     
     integer i, j;
-    initial begin
-        $readmemb("input.mem", map);
-    end
 
-    genvar g;
-    generate
-        for(g = 0; g < WIDTH; g = g + 1) begin : gen_paths
-            wire left_beam = (g > 0) ? previous_path[g-1] && map[y][g-1] : 1'b0;
-            wire right_beam = (g < WIDTH-1) ? previous_path[g+1] && map[y][g+1] : 1'b0;
-            wire straight_beam = previous_path[g] && !map[y][g];
-            assign next_path[g] = left_beam || right_beam || straight_beam;
-            assign splits[g] = previous_path[g] && map[y][g];
-        end
-    endgenerate
-    
+    assign ready = 1'b1;
+
     always @(posedge clk) begin
-        for(j = 0; j < 70; j = j + 1) begin
-            level1[j] <= splits[j*2] + splits[j*2+1];
+        if (rst) begin
+            chunk_cnt <= 3'd0;
+            row_buffer <= 141'd0;
+            row_complete <= 1'b0;
+        end else begin
+            row_complete <= 1'b0;
+            if (valid_in) begin
+                case(chunk_cnt)
+                    3'd0: row_buffer[31:0] <= data_in;
+                    3'd1: row_buffer[63:32] <= data_in;
+                    3'd2: row_buffer[95:64] <= data_in;
+                    3'd3: row_buffer[127:96] <= data_in;
+                    3'd4: begin
+                        row_buffer[140:128] <= data_in[12:0];
+                        row_complete <= 1'b1;
+                    end
+                endcase
+                chunk_cnt <= (chunk_cnt == 3'd4) ? 3'd0 : chunk_cnt + 1;
+            end
         end
-        level1[70] <= {1'b0, splits[140]};
-        
-        for(j = 0; j < 35; j = j + 1) begin
-            level2[j] <= level1[j*2] + level1[j*2+1];
-        end
-        level2[35] <= {1'b0, level1[70]};
-        
-        for(j = 0; j < 18; j = j + 1) begin
-            level3[j] <= level2[j*2] + level2[j*2+1];
-        end
-        
-        for(j = 0; j < 9; j = j + 1) begin
-            level4[j] <= level3[j*2] + level3[j*2+1];
-        end
-        
-        level5[0] <= level4[0] + level4[1] + level4[2];
-        level5[1] <= level4[3] + level4[4] + level4[5];
-        level5[2] <= level4[6] + level4[7] + level4[8];
-        
-        level6 <= level5[0] + level5[1] + level5[2]; 
     end
 
-    always @(posedge clk or posedge rst) begin
-        if(rst) begin
-            result <= 32'd0;
-            finished <= 1'b0;
-            state <= IDLE;
-            sum <= 32'd0;
-            y <= 8'd0;
-            cycle_count <= 8'd0;
-            previous_path <= {WIDTH{1'b0}};
+    always @(posedge clk) begin
+        if (rst) begin
+            stage1_valid <= 1'b0;
+            stage1_row_data <= {WIDTH{1'b0}};
         end else begin
-            case(state)
-                IDLE: begin
-                    if(start) begin
-                        state <= RUNNING;
-                        y <= 8'd1;
-                        cycle_count <= 8'd0;
-                        sum <= 32'd0;
-                        previous_path <= {WIDTH{1'b0}};
-                        previous_path[MIDDLE] <= 1'b1;
-                    end
-                end
-                RUNNING: begin
-                    cycle_count <= cycle_count + 1;
-                    previous_path <= next_path;
-                    
-                    if(cycle_count >= PIPELINE_DEPTH) begin
-                        sum <= sum + level6;
-                    end
-                    
-                    if(y == HEIGHT - 1) begin
-                        state <= DRAINING;
-                        y <= 8'd0;
+            stage1_valid <= row_complete;
+            if (row_complete) begin
+                stage1_row_data <= row_buffer;
+            end
+        end
+    end
+
+    always @(posedge clk) begin
+        if (rst) begin
+            stage2_valid <= 1'b0;
+            stage2_splits <= {WIDTH{1'b0}};
+            stage2_next_beams <= {WIDTH{1'b0}};
+            current_beams <= {WIDTH{1'b0}};
+            current_beams[MIDDLE] <= 1'b1;  
+        end else begin
+            stage2_valid <= stage1_valid;
+            if (stage1_valid) begin
+                stage2_splits <= current_beams & stage1_row_data;
+                
+                for (i = 0; i < WIDTH; i = i + 1) begin
+                    if (i == 0) begin
+                        stage2_next_beams[i] <= (current_beams[i+1] && stage1_row_data[i+1]) || (current_beams[i] && !stage1_row_data[i]);
+                    end else if (i == WIDTH-1) begin
+                        stage2_next_beams[i] <= (current_beams[i-1] && stage1_row_data[i-1]) || (current_beams[i] && !stage1_row_data[i]);
                     end else begin
-                        y <= y + 1;
+                        stage2_next_beams[i] <= (current_beams[i-1] && stage1_row_data[i-1]) || (current_beams[i+1] && stage1_row_data[i+1]) || (current_beams[i] && !stage1_row_data[i]);
                     end
                 end
-                DRAINING: begin
-                    sum <= sum + level6;
-                    y <= y + 1;
-                    
-                    if(y == PIPELINE_DEPTH - 1) begin
-                        state <= DONE;
-                    end
+                current_beams <= stage2_next_beams;
+            end
+        end
+    end
+
+    always @(posedge clk) begin
+        if (rst) begin
+            stage3_valid <= 1'b0;
+        end else begin
+            stage3_valid <= stage2_valid;
+            if (stage2_valid) begin
+                for (j = 0; j < 70; j = j + 1) begin
+                    stage3_level1[j] <= stage2_splits[j*2] + stage2_splits[j*2+1];
                 end
-                DONE: begin
-                    finished <= 1'b1;
-                    result <= sum;
+                stage3_level1[70] <= {1'b0, stage2_splits[140]};
+            end
+        end
+    end
+
+    always @(posedge clk) begin
+        if (rst) begin
+            stage4_valid <= 1'b0;
+        end else begin
+            stage4_valid <= stage3_valid;
+            if (stage3_valid) begin
+                for (j = 0; j < 35; j = j + 1) begin
+                    stage4_level2[j] <= stage3_level1[j*2] + stage3_level1[j*2+1];
                 end
-            endcase
+                stage4_level2[35] <= {1'b0, stage3_level1[70]};
+            end
+        end
+    end
+
+    always @(posedge clk) begin
+        if (rst) begin
+            stage5_valid <= 1'b0;
+        end else begin
+            stage5_valid <= stage4_valid;
+            if (stage4_valid) begin
+                for (j = 0; j < 18; j = j + 1) begin
+                    stage5_level3[j] <= stage4_level2[j*2] + stage4_level2[j*2+1];
+                end
+            end
+        end
+    end
+
+    always @(posedge clk) begin
+        if (rst) begin
+            stage6_valid <= 1'b0;
+        end else begin
+            stage6_valid <= stage5_valid;
+            if (stage5_valid) begin
+                for (j = 0; j < 9; j = j + 1) begin
+                    stage6_level4[j] <= stage5_level3[j*2] + stage5_level3[j*2+1];
+                end
+            end
+        end
+    end
+
+    always @(posedge clk) begin
+        if (rst) begin
+            stage7_valid <= 1'b0;
+        end else begin
+            stage7_valid <= stage6_valid;
+            if (stage6_valid) begin
+                stage7_level5[0] <= stage6_level4[0] + stage6_level4[1] + stage6_level4[2];
+                stage7_level5[1] <= stage6_level4[3] + stage6_level4[4] + stage6_level4[5];
+                stage7_level5[2] <= stage6_level4[6] + stage6_level4[7] + stage6_level4[8];
+            end
+        end
+    end
+
+    always @(posedge clk) begin
+        if (rst) begin
+            stage8_valid <= 1'b0;
+            stage8_level6 <= 7'd0;
+        end else begin
+            stage8_valid <= stage7_valid;
+            if (stage7_valid) begin
+                stage8_level6 <= stage7_level5[0] + stage7_level5[1] + stage7_level5[2];
+            end
+        end
+    end
+
+    always @(posedge clk) begin
+        if (rst) begin
+            sum <= 32'd0;
+            rows_processed <= 8'd0;
+            finished <= 1'b0;
+            result <= 32'd0;
+        end else if (stage8_valid) begin
+            sum <= sum + stage8_level6;
+            rows_processed <= rows_processed + 1;
+            
+            if (rows_processed == HEIGHT - 1) begin
+                finished <= 1'b1;
+                result <= sum + stage8_level6;
+            end
         end
     end
 endmodule

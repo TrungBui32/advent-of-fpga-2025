@@ -20,7 +20,7 @@ Key techniques and optimizations include:
 
 - Deep pipelining with stage balancing to optimize the critical path, combined with data forwarding to prevent stalls.
 
-- One-hot FSMs and optimized control paths to reduce combinational delays in state machines.
+- Optimized control paths to reduce combinational delays in state machines.
 
 - Partial computation and early termination to avoid unnecessary calculations and accelerate streaming input.
 
@@ -41,9 +41,18 @@ cd day_X
 make
 ```
 
-Because each day has 2 part, I set default is part 1. To run part 2 test, just simply change the name of the VERILOG_SOURCES and TOPLEVEL in Makefile from 1 to 2. There is an exception (day 5) that separate 2 folders for part 1 and part 2 as their input incompatibility. 
+Because each day has 2 part, I set default is part 1. To run part 2 test, just simply change the name of the VERILOG_SOURCES and TOPLEVEL in Makefile from 1 to 2. However, there are some problem has 1 part solution only.
 
 **Input Handling**: Raw input data is stored in `input.txt` files.
+
+### Folder Structure 
+```
+advent-of-fpga-2025
+├── pictures                     # pictures for README 
+├── refs                         # other solution not for judgement
+├── solutions                    # 32-bit streaming solutions
+└── README.md                    
+```
 
 ## Performance Metrics
 To evaluate each FPGA solution, the following metrics are reported:
@@ -147,8 +156,6 @@ For example, in range `11-22`, the first halves are `1` and `2`, giving us numbe
 - **Best Execution Time**: 0.34µs
 - **Target Execution Time**: 0.36µs
 
-**Part 2**: It is basically brute force approach which is not optimal (I guess?) but I still trying to use approach of part 1 in this. 
-
 ### Day 3: [Lobby](https://adventofcode.com/2025/day/3)
 
 **Part 1**: Conceptually simple problem: for each line of digits, pick two digits (in order) that form the largest possible 2-digit number, then sum across all lines. But mapping this cleanly to hardware ended up being more interesting than expected.
@@ -249,26 +256,6 @@ The pipeline has 4 stages (not counting input reception):
 - **Number of Cycles**: 2,006 cycles
 - **Best Execution Time**: 3.97µs
 - **Target Execution Time**: 4.41µs
-
-**Part 2**: The problem shifts from checking individual IDs against ranges to computing the total count of unique IDs covered by all ranges. This requires merging overlapping and adjacent ranges before counting. In addition, this implimentation is not something realistic so I don't show the performance here.
-
-The solution uses a pure computational approach with no streaming input - all 182 ranges are loaded from memory at initialization. The algorithm proceeds through three phases:
-
-Pipeline Stages:
-1. SORT: Bubble sort to order ranges by start position
-   - Optimized with early termination when no swaps occur
-   - Compares adjacent ranges and swaps when out of order
-2. MERGE: Combine overlapping/adjacent ranges
-   - Walks through sorted ranges sequentially
-   - Extends current range when overlap detected (start ≤ previous_end + 1)
-   - Marks merged ranges as invalid to avoid double-counting
-3. SUM: Count total IDs across all valid merged ranges
-   - Adds up (end - start + 1) for each valid range
-
-**Key Design Decisions:**
-- In-place merging by extending ranges and marking absorbed ranges as invalid
-- The `+1` check handles both overlapping ranges and adjacent ranges that should merge
-
 
 ### Day 6: [Trash Compactor](https://adventofcode.com/2025/day/6)
 - **Part 1**: This problem is optimally solved using BCD encoding. The testbench drives inputs as BCD, with each problem containing 4 rows of values plus an operation sign. I transfer each problem over 2 cycles, with each cycle carrying two 16-bit BCD values (supporting up to 4 digits per value). A separate op input signal indicates the operation (multiply or add).A key insight: the input contains no zero digits at all, which greatly simplifies the bcd_to_binary conversion function. I can determine the actual value by checking which digit positions are non-zero, eliminating the need for complex zero-handling logic. For multiplication, rather than using an expensive 32×32 combinational multiplier, I implemented a Karatsuba-like algorithm across multiple pipeline stages. This decomposes the 32×32 multiplication into four 16×16 multiplications, significantly reducing the critical path.

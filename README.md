@@ -4,6 +4,28 @@ A collection of Verilog solutions based on Advent of Code 2025 problems implemen
 
 To explain, I chose CocoTB in this challenge simply because I used it before, I see that I need to process input at first, and I just need the final answer, I don't think anything better than CocoTB in this context.
 
+My goal for these solutions is to maximize clock frequency while minimizing redundant computation cycles. I implement mathematical approaches wherever possible to reduce unnecessary iterations or checks.
+
+All inputs are handled via 32-bit streaming, which allows the design to scale naturally to 10×, 100×, or even 1000× larger input sizes. Double-buffering and ping-pong memory structures are used to keep pipelines fully utilized without stalls, while column-aligned storage ensures efficient data access.
+
+Key techniques and optimizations include:
+
+- Binary-Coded Decimal (BCD) for efficient digit extraction and arithmetic.
+
+- Karatsuba-like multiplication to decompose large multiplications into smaller, faster stages.
+
+- Shift-and-add multipliers to replace costly combinational multiplication.
+
+- Tree adders and reduction trees to minimize latency for sums, min/max, and OR/AND operations.
+
+- Deep pipelining with stage balancing to optimize the critical path, combined with data forwarding to prevent stalls.
+
+- One-hot FSMs and optimized control paths to reduce combinational delays in state machines.
+
+- Partial computation and early termination to avoid unnecessary calculations and accelerate streaming input.
+
+All solutions are fully synthesizable and implementable on an FPGA using Vivado 2025.1. Resource usage is not reported, as the target board provides ample capacity relative to these designs (the maximum amount of LUT used is arounf 25% as I remember :panda_face: ).
+
 ## How to run
 
 Prerequisites before run:

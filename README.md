@@ -258,7 +258,7 @@ The pipeline has 4 stages (not counting input reception):
 - **Target Execution Time**: 4.41µs
 
 ### Day 6: [Trash Compactor](https://adventofcode.com/2025/day/6)
-- **Part 1**: This problem is optimally solved using BCD encoding. The testbench drives inputs as BCD, with each problem containing 4 rows of values plus an operation sign. I transfer each problem over 2 cycles, with each cycle carrying two 16-bit BCD values (supporting up to 4 digits per value). A separate op input signal indicates the operation (multiply or add).A key insight: the input contains no zero digits at all, which greatly simplifies the bcd_to_binary conversion function. I can determine the actual value by checking which digit positions are non-zero, eliminating the need for complex zero-handling logic. For multiplication, rather than using an expensive 32×32 combinational multiplier, I implemented a Karatsuba-like algorithm across multiple pipeline stages. This decomposes the 32×32 multiplication into four 16×16 multiplications, significantly reducing the critical path.
+**Part 1**: This problem is optimally solved using BCD encoding. The testbench drives inputs as BCD, with each problem containing 4 rows of values plus an operation sign. I transfer each problem over 2 cycles, with each cycle carrying two 16-bit BCD values (supporting up to 4 digits per value). A separate op input signal indicates the operation (multiply or add).A key insight: the input contains no zero digits at all, which greatly simplifies the bcd_to_binary conversion function. I can determine the actual value by checking which digit positions are non-zero, eliminating the need for complex zero-handling logic. For multiplication, rather than using an expensive 32×32 combinational multiplier, I implemented a Karatsuba-like algorithm across multiple pipeline stages. This decomposes the 32×32 multiplication into four 16×16 multiplications, significantly reducing the critical path.
 
 Input Stage: Buffers two 32-bit words into a 64-bit register containing four 16-bit BCD values
 Stage 1: BCD to binary conversion for all four numbers in parallel
@@ -283,7 +283,7 @@ Accumulator: Maintains running sum across all 1000 problems
 - **Best Execution Time**: 6.68µs
 - **Target Execution Time**: 6.83µs
 
-- **Part 2**: With my implimentation, part 2 is like 80% similar to part 1. The differences are just truncating the input buffer and handling some additional zero edge cases. 
+**Part 2**: With my implimentation, part 2 is like 80% similar to part 1. The differences are just truncating the input buffer and handling some additional zero edge cases. 
 
 Input Stage: Buffers two 32-bit words into a 64-bit register containing four 16-bit BCD values
 Stage 1: BCD-to-binary conversion reading digits column-wise-extracts nibbles at positions [3:0], [19:16], [35:32], [51:48] for the first number, [7:4], [23:20], [39:36], [55:52] for the second, etc., to form numbers from right-to-left columns
@@ -303,7 +303,7 @@ Accumulator: Maintains running sum across all 1000 problems
 - **Target Execution Time**: 7.04µs
 
 ### Day 7: [Laboratories](https://adventofcode.com/2025/day/7)
-- **Part 1**: The manifold is 141×142, so each row requires 141 bits, streamed in as five 32-bit chunks over 5 clock cycles. The core challenge is tracking which positions have active beams and detecting splits. I maintain a current_beams vector where each bit represents a beam at that position. When a beam hits a splitter (^), it stops and creates two new beams to the left and right.
+**Part 1**: The manifold is 141×142, so each row requires 141 bits, streamed in as five 32-bit chunks over 5 clock cycles. The core challenge is tracking which positions have active beams and detecting splits. I maintain a current_beams vector where each bit represents a beam at that position. When a beam hits a splitter (^), it stops and creates two new beams to the left and right.
 The pipeline has 8 stages:
 
 Stage 1: Buffer the incoming row data
@@ -326,7 +326,7 @@ next_beams[i] = (current_beams[i-1] && splits[i-1]) || (current_beams[i+1] && sp
 - **Best Execution Time**: 0.87µs
 - **Target Execution Time**: 0.99µs
 
-- **Part 2**: Instead of tracking single beams, I track the number of quantum timelines at each position. When a particle reaches a splitter, it takes both paths simultaneously, doubling the timeline count. The problem with this part is that the number will become very large so t hat the critical path is abit bigger than I expected. Although there are available ideas to optimize the critical path (but deeper pipelines of course), I did not do it because it not really a matter here and will make the program a bit cumbersome to read and the result now is quite good tho.
+**Part 2**: Instead of tracking single beams, I track the number of quantum timelines at each position. When a particle reaches a splitter, it takes both paths simultaneously, doubling the timeline count. The problem with this part is that the number will become very large so t hat the critical path is abit bigger than I expected. Although there are available ideas to optimize the critical path (but deeper pipelines of course), I did not do it because it not really a matter here and will make the program a bit cumbersome to read and the result now is quite good tho.
 
 The key difference from Part 1:
 

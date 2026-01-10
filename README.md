@@ -311,9 +311,9 @@ Stage 2: Detect splits (beams hitting ^) and compute next beam positions
 Stages 3-8: Tree reduction to sum all splits in the row (141 bits → 70 → 36 → 18 → 9 → 3 → 1)
 
 The beam propagation logic handles three cases per position:
-
+```
 next_beams[i] = (current_beams[i-1] && splits[i-1]) || (current_beams[i+1] && splits[i+1]) || (current_beams[i] && !splits[i])
-
+```
 **Optimizations:**
 - Tree adders for parallel summation across 141 positions
 - Single-cycle beam/timeline propagation using combinational logic
@@ -329,9 +329,9 @@ next_beams[i] = (current_beams[i-1] && splits[i-1]) || (current_beams[i+1] && sp
 **Part 2**: Instead of tracking single beams, I track the number of quantum timelines at each position. When a particle reaches a splitter, it takes both paths simultaneously, doubling the timeline count. The problem with this part is that the number will become very large so t hat the critical path is abit bigger than I expected. Although there are available ideas to optimize the critical path (but deeper pipelines of course), I did not do it because it not really a matter here and will make the program a bit cumbersome to read and the result now is quite good tho.
 
 The key difference from Part 1:
-
+```
 next_paths[i] = (splits[i-1] ? current_paths[i-1] : 0) + (splits[i+1] ? current_paths[i+1] : 0) + (!splits[i] ? current_paths[i] : 0)
-
+```
 **Optimizations:**
 - Tree adders for parallel summation across 141 positions
 - Single-cycle beam/timeline propagation using combinational logic

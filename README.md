@@ -1,6 +1,6 @@
 # Advent of FPGA 2025
 
-A collection of Verilog solutions based on Advent of Code 2025 problems implemented for [Advent of FPGA](https://blog.janestreet.com/advent-of-fpga-challenge-2025/). My language and tools are Verilog, CocoTB, and Makefile. 
+A collection of Verilog solutions based on Advent of Code 2025 problems implemented for [Advent of FPGA](https://blog.janestreet.com/advent-of-fpga-challenge-2025/). My language and tools are Verilog, CocoTB, and Makefile. I target the KV260C board, which has a maximum achievable frequency of approximately 725MHz. Therefore, I analyze both the theoretical best-case execution time (using max frequency from timing analysis) and the realistic target execution time (constrained by board limitations).
 
 To explain, I chose CocoTB in this challenge simply because I used it before, I see that I need to process input at first, and I just need the final answer, I don't think anything better than CocoTB in this context.
 
@@ -22,6 +22,21 @@ make
 Because each day has 2 part, I set default is part 1. To run part 2 test, just simply change the name of the VERILOG_SOURCES and TOPLEVEL in Makefile from 1 to 2. There is an exception (day 5) that separate 2 folders for part 1 and part 2 as their input incompatibility. 
 
 **Input Handling**: Raw input data is stored in `input.txt` files.
+
+## Performance Metrics
+To evaluate each FPGA solution, the following metrics are reported:
+- **Critical Path**: Longest combinational delay in the design. Determines the maximum theoretical speed.
+- **Max Frequency**: Maximum operating frequency according to timing analysis (1 / Critical Path). Represents the fastest the design could run.
+- **Target Frequency**: The frequency constrained in Vivado for the actual FPGA. Accounts for board and silicon limitations.
+- **Number of Cycles**: Total clock cycles to complete the computation for a single input. Shows pipeline depth and algorithm efficiency.
+- **Best Execution Time**: Execution time at Max Frequency (theoretical fastest): 
+```
+Best Execution Time = Number of Cycles / Max Frequency
+```
+- **Target Execution Time**: Execution time at Target Frequency (realistic board-limited speed):
+```
+Target Execution Time = Number of Cycles / Target Frequency
+```
 
 ## Problems Overview
 
@@ -57,6 +72,14 @@ That's a hard silicon constraint, not something I can optimize around. So the fi
 - Separate paths for left/right rotation to reduce mux depth
 - 3-cycle pipeline flush to drain in-flight operations before finishing
 
+**Performance:**
+- **Critical Path**: 0.786ns
+- **Max Frequency**: 1.27GHz (timing analysis)
+- **Target Frequency**: 725MHz (constraints)
+- **Number of Cycles**: 4,202 cycles
+- **Best Execution Time**: 3.31µs
+- **Target Execution Time**: 5.80µs
+
 **Part 2**: Almost identical to Part 1. Main differences are adding a division to count how many times we cross zero during a rotation (e.g., R1000 crosses zero 10 times), and tweaking the crossing detection logic to catch passes through zero mid-rotation instead of just at the end.
 
 **Additional optimizations:**
@@ -66,8 +89,11 @@ That's a hard silicon constraint, not something I can optimize around. So the fi
 
 **Performance:**
 - **Critical Path**: 0.786ns
-- **Max Frequency**: 724.6 MHz  
-- **Execution Time**: 4,202 cycles (~5.8µs)
+- **Max Frequency**: 1.27GHz (timing analysis)
+- **Target Frequency**: 725MHz (constraints)
+- **Number of Cycles**: 4,202 cycles
+- **Best Execution Time**: 3.31µs
+- **Target Execution Time**: 5.80µs
 
 ### Day 2: [Gift Shop](https://adventofcode.com/2025/day/2)
 
@@ -93,9 +119,11 @@ For example, in range `11-22`, the first halves are `1` and `2`, giving us numbe
 
 **Performance:**
 - **Critical Path**: 2.848ns
-- **Max Frequency**: 333MHz 
-- **Pipeline Depth**: 14 stages
-- **Execution Time**: 120 cycles (~0.36 µs)
+- **Max Frequency**: 351MHz (timing analysis)
+- **Target Frequency**: 333MHz (constraints)
+- **Number of Cycles**: 120 cycles
+- **Best Execution Time**: 0.34µs
+- **Target Execution Time**: 0.36µs
 
 **Part 2**: It is basically brute force approach which is not optimal (I guess?) but I still trying to use approach of part 1 in this. 
 
@@ -131,10 +159,11 @@ Finally, each bank’s result is accumulated into a running sum. A counter track
 
 **Performance:**
 - **Critical Path**: 1.349ns
-- **Max Frequency**: 650MHz 
-- **Pipeline Depth**: 11 stages
-- **Execution Time**: 2614 cycles (~4.02µs)
-
+- **Max Frequency**: 741MHz (timing analysis)
+- **Target Frequency**: 650MHz (constraints)
+- **Number of Cycles**: 2,614 cycles
+- **Best Execution Time**: 3.53µs
+- **Target Execution Time**: 4.02µs
 
 **Part 2**:  This is not much harder version of Part 1 but hard to optimize (one reason is I want to use 32-bit data in so the number of cycle each state is different). Instead of picking 2 digits to form the largest 2-digit number, I now need to pick 12 digits from each bank to form the largest 12-digit number.
 The challenge is figuring out which 12 digits to keep. The key insight is that I want to build the number left-to-right, always trying to put the biggest possible digit in each position. But there's a constraint: I can only pick a digit if there are still enough digits left after it to complete our 12-digit number.
@@ -168,9 +197,11 @@ The cascaded comparison structure efficiently finds the best position for each n
 
 **Performance:**
 - **Critical Path**: 3.658ns
-- **Max Frequency**: 250MHz 
-- **Pipeline Depth**: 3 stages
-- **Execution Time**: 21430 cycles (~85.72µs)
+- **Max Frequency**: 273MHz (timing analysis)
+- **Target Frequency**: 250MHz (constraints)
+- **Number of Cycles**: 21,430 cycles
+- **Best Execution Time**: 78.5µs
+- **Target Execution Time**: 85.72µs
 
 
 ### Day 5: [Cafeteria](https://adventofcode.com/2025/day/5)
@@ -191,8 +222,11 @@ The pipeline has 4 stages (not counting input reception):
 
 **Performance:**
 - **Critical Path**: 1.979ns
-- **Max Frequency**: ~455 MHz
-- **Execution Time**: 2,006 cycles (~4.41µs)
+- **Max Frequency**: 505MHz (timing analysis)
+- **Target Frequency**: ~455MHz (constraints)
+- **Number of Cycles**: 2,006 cycles
+- **Best Execution Time**: 3.97µs
+- **Target Execution Time**: 4.41µs
 
 **Part 2**: The problem shifts from checking individual IDs against ranges to computing the total count of unique IDs covered by all ranges. This requires merging overlapping and adjacent ranges before counting. In addition, this implimentation is not something realistic so I don't show the performance here.
 
@@ -234,8 +268,11 @@ Accumulator: Maintains running sum across all 1000 problems
 
 **Performance:**
 - **Critical Path**: 3.326ns
-- **Max Frequency**: ~295MHz   
-- **Execution Time**: 2,010 cycles (6.834µs)
+- **Max Frequency**: 301MHz (timing analysis)
+- **Target Frequency**: ~295MHz (constraints)
+- **Number of Cycles**: 2,010 cycles
+- **Best Execution Time**: 6.68µs
+- **Target Execution Time**: 6.83µs
 
 - **Part 2**: With my implimentation, part 2 is like 80% similar to part 1. The differences are just truncating the input buffer and handling some additional zero edge cases. 
 
@@ -250,12 +287,53 @@ Accumulator: Maintains running sum across all 1000 problems
 
 **Performance:**
 - **Critical Path**: 3.396ns
-- **Max Frequency**: ~285MHz
-- **Execution Time**: 2,010 cycles (7.035µs)
+- **Max Frequency**: 294MHz (timing analysis)
+- **Target Frequency**: ~285MHz (constraints)
+- **Number of Cycles**: 2,010 cycles
+- **Best Execution Time**: 6.84µs
+- **Target Execution Time**: 7.04µs
 
-### Day 8: [Playground](https://adventofcode.com/2025/day/8)
-- **Part 1**: 
-- **Part 2**: 
+### Day 7: [Laboratories](https://adventofcode.com/2025/day/7)
+- **Part 1**: The manifold is 141×142, so each row requires 141 bits, streamed in as five 32-bit chunks over 5 clock cycles. The core challenge is tracking which positions have active beams and detecting splits. I maintain a current_beams vector where each bit represents a beam at that position. When a beam hits a splitter (^), it stops and creates two new beams to the left and right.
+The pipeline has 8 stages:
+
+Stage 1: Buffer the incoming row data
+Stage 2: Detect splits (beams hitting ^) and compute next beam positions
+Stages 3-8: Tree reduction to sum all splits in the row (141 bits → 70 → 36 → 18 → 9 → 3 → 1)
+
+The beam propagation logic handles three cases per position:
+
+next_beams[i] = (current_beams[i-1] && splits[i-1]) || (current_beams[i+1] && splits[i+1]) || (current_beams[i] && !splits[i])
+
+**Optimizations:**
+- Tree adders for parallel summation across 141 positions
+- Single-cycle beam/timeline propagation using combinational logic
+
+**Performance:**
+- **Critical Path**: 1.202ns
+- **Max Frequency**: 832MHz (timing analysis)
+- **Target Frequency**: 725MHz (constraints)
+- **Number of Cycles**: 721 cycles
+- **Best Execution Time**: 0.87µs
+- **Target Execution Time**: 0.99µs
+
+- **Part 2**: Instead of tracking single beams, I track the number of quantum timelines at each position. When a particle reaches a splitter, it takes both paths simultaneously, doubling the timeline count. The problem with this part is that the number will become very large so t hat the critical path is abit bigger than I expected. Although there are available ideas to optimize the critical path (but deeper pipelines of course), I did not do it because it not really a matter here and will make the program a bit cumbersome to read and the result now is quite good tho.
+
+The key difference from Part 1:
+
+next_paths[i] = (splits[i-1] ? current_paths[i-1] : 0) + (splits[i+1] ? current_paths[i+1] : 0) + (!splits[i] ? current_paths[i] : 0)
+
+**Optimizations:**
+- Tree adders for parallel summation across 141 positions
+- Single-cycle beam/timeline propagation using combinational logic
+
+**Performance:**
+- **Critical Path**: 2.375ns
+- **Max Frequency**: 421MHz (timing analysis)
+- **Target Frequency**: 400MHz (constraints)
+- **Number of Cycles**: 721 cycles
+- **Best Execution Time**: 1.71µs
+- **Target Execution Time**: 1.80µs
 
 ### Day 12: [Christmas Tree Farm](https://adventofcode.com/2025/day/12)
 
@@ -277,8 +355,11 @@ The pipeline has 6 stages (not counting input reception):
 
 **Performance:**
 - **Critical Path**: 1.402ns
-- **Max Frequency**: 680 MHz  
-- **Execution Time**: 2,009 cycles (~2.96µs)
+- **Max Frequency**: 713MHz (timing analysis)
+- **Target Frequency**: 680MHz (constraints)
+- **Number of Cycles**: 2,009 cycles
+- **Best Execution Time**: 2.82µs
+- **Target Execution Time**: 2.96µs
 
 ### File Structure (per day)
 ```

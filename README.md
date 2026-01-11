@@ -24,7 +24,9 @@ Key techniques and optimizations include:
 
 - Partial computation and early termination to avoid unnecessary calculations and accelerate streaming input.
 
-All solutions are fully synthesizable and implementable on an FPGA using Vivado 2025.1. Resource usage is not reported, as the target board provides ample capacity relative to these designs (the maximum amount of LUT used is arounf 25% as I remember :panda_face: ).
+- Data forwarding to avoid stalling
+
+All solutions are fully synthesizable and implementable on an FPGA using Vivado 2025.1. Resource usage is not reported, as the target board provides ample capacity relative to these designs (the maximum amount of LUT used is around 25% as I remember :panda_face: ).
 
 ## How to run
 
@@ -36,23 +38,24 @@ Prerequisites before run:
 
 All solutions follow a consistent build system using Makefiles. To run any day's solution:
 
-```bash
+`bash
 cd day_X
 make
-```
+`
 
 Because each day has 2 part, I set default is part 1. To run part 2 test, just simply change the name of the VERILOG_SOURCES and TOPLEVEL in Makefile from 1 to 2. However, there are some problem has 1 part solution only.
 
 **Input Handling**: Raw input data is stored in `input.txt` files.
 
 ### Folder Structure 
-```
+*Note: I have solved most problems but some solutions should not be judged as they preloaded the whole input which is not suitable for realistic application. That is why I placed them in folder refs, although some of them actually quite good and optimized a lot. The solutions I write here are all in folder solutions*
+`
 advent-of-fpga-2025
 ├── pictures                     # pictures for README 
 ├── refs                         # other solution not for judgement
 ├── solutions                    # 32-bit streaming solutions
 └── README.md                    
-```
+`
 
 ## Performance Metrics
 To evaluate each FPGA solution, the following metrics are reported:
@@ -61,19 +64,19 @@ To evaluate each FPGA solution, the following metrics are reported:
 - **Target Frequency**: The frequency constrained in Vivado for the actual FPGA. Accounts for board and silicon limitations.
 - **Number of Cycles**: Total clock cycles to complete the computation for a single input. Shows pipeline depth and algorithm efficiency.
 - **Best Execution Time**: Execution time at Max Frequency (theoretical fastest): 
-```
+`
 Best Execution Time = Number of Cycles / Max Frequency
-```
+`
 - **Target Execution Time**: Execution time at Target Frequency (realistic board-limited speed):
-```
+`
 Target Execution Time = Number of Cycles / Target Frequency
-```
+`
 
 ## Problems Overview
 
 ### Day 1: [Secret Entrance](https://adventofcode.com/2025/day/1)
 
-**Part 1**: Pretty straightforward problem, but I ran into two fun surprises while optimizing.
+**Part 1**: Pretty straightforward problem, the only action needed is calculating the next position with currentb position and movement, but I ran into two fun surprises while optimizing.
 
 I built a simple 3-stage pipeline with data forwarding to handle the dial rotations. The modulo operator (%) is usually expensive, so I expected that to be the bottleneck. But when I set an initial target of 500MHz, the timing report showed something weird:
 
@@ -101,7 +104,6 @@ That's a hard silicon constraint, not something I can optimize around. So the fi
 - Data forwarding to avoid stalls between operations
 - Modulo by 100 gets optimized by the synthesizer into efficient subtract-and-compare logic
 - Separate paths for left/right rotation to reduce mux depth
-- 3-cycle pipeline flush to drain in-flight operations before finishing
 
 **Performance:**
 - **Critical Path**: 0.786ns
@@ -128,21 +130,69 @@ That's a hard silicon constraint, not something I can optimize around. So the fi
 
 ### Day 2: [Gift Shop](https://adventofcode.com/2025/day/2)
 
-**Part 1**: This problem asks us to find "invalid" product IDs in ranges - specifically, IDs that are some digit sequence repeated exactly twice (like `123123` or `6464`).
+**Part 1**: The most intuitive solution is to iterate through every number in the given range and check whether it is invalid. However, after inspecting the actual inputs, it becomes clear that the ranges can be very large, meaning most cycles would be wasted checking values that are trivially valid.
 
-The key insight is that instead of checking every number in a range individually, we can calculate the sum of all invalid IDs mathematically. For a range with even-length IDs, we can split each number into two halves and look for cases where the halves match.
+Instead, I take a mathematical approach based on the observation that, in Part 1, a number is invalid only when its first half and second half are identical. This allows the problem to be reformulated as *generating* invalid values directly, rather than *searching* for them.
 
-The pipeline takes each range and:
-1. Converts the start/end from BCD (Binary-Coded Decimal) to binary
-2. Splits each number at the midpoint into high and low halves
-3. Finds the range of "first halves" that could produce valid repeating numbers
-4. Uses the arithmetic series formula to sum all matching IDs: `sum = n * (first + last) / 2`
-5. Multiplies by `10^(half_length) + 1` to reconstruct the actual repeated numbers
+To support efficient digit-level operations in hardware, I use Binary-Coded Decimal (BCD), which allows decimal digit extraction without division or modulo operations. This approach is well suited to Part 1 but becomes overly complex for Part 2, where the invalidity rules are significantly more complicated. I implemented a reference solution for Part 2, but I do not consider it suitable for fair performance comparison.
 
-For example, in range `11-22`, the first halves are `1` and `2`, giving us numbers `11` and `22`. The sum is `(2 * (1+2) / 2) * 11 = 33`.
+I also write a simple program count roughly number of loops I need if I use intuitive solution by calculating all numbers of values needed to be checked in ranges. The intuitive solution will take ~2,303,925 cycles, while my current solution needs only 120 cycles (~19200 times less) but still can run at over 300MHz shows that this solution is much better.
+
+For example, consider the range ` 986003–1032361 `. The lower bound has 6 digits, while the upper bound has ` 7 ` digits. Since invalid numbers must have an even number of digits with identical halves, the largest possible invalid value in this range is ` 999999 `. Therefore, instead of checking the full range ` 986003–1032361 `, the effective range can be reduced to ` 986003–999999 `.
+
+Next, observe that in ` 986003 `, the second half is smaller than the first half. This implies that the first invalid value is obtained by duplicating the first half, yielding 986986. From there, all remaining invalid values can be generated by incrementing the first half and duplicating it (e.g., 987987, 988988, and so on).
+
+However, iterating through all such values is unnecessary, since their structure is already known. Rather than looping, the entire set of invalid values can be computed directly using a simple closed-form arithmetic calculation.
+```
+sum = n * (first + last) / 2
+```
+That makes sense right? Instead of loop from 986 to 999, I just use 1 formula. Then after that, I need to multiply that value with 10^(half length) + 1 to construct the final value.
+
+By analyzing all provided inputs, I observed that the digit-length difference between the start and end of each range is at most one. This eliminates the need to handle cases such as transitioning from 2-digit to 4-digit numbers, greatly simplifying the hardware control logic.
+
+Range                    | Digits      | 
+-------------------------|-------------|
+288352-412983            | 6-6         |
+743179-799185            | 6-6         | 
+7298346751-7298403555    | 10-10       | 
+3269-7729                | 4-4         | 
+3939364590-3939433455    | 10-10       | 
+867092-900135            | 6-6         | 
+25259-67386              | 5-5         | 
+95107011-95138585        | 8-8         | 
+655569300-655755402      | 9-9         | 
+9372727140-9372846709    | 10-10       | 
+986003-1032361           | 6-7         | 
+69689-125217             | 5-6         |
+417160-479391            | 6-6         |
+642-1335                 | 3-4         | 
+521359-592037            | 6-6         | 
+7456656494-7456690478    | 10-10       | 
+38956690-39035309        | 8-8         | 
+1-18                     | 1-2         | 
+799312-861633            | 6-6         | 
+674384-733730            | 6-6         | 
+1684-2834                | 4-4         | 
+605744-666915            | 6-6         | 
+6534997-6766843          | 7-7         | 
+4659420-4693423          | 7-7         |
+6161502941-6161738969    | 10-10       |
+932668-985784            | 6-6         | 
+901838-922814            | 6-6         | 
+137371-216743            | 6-6         | 
+47446188-47487754        | 8-8         |
+117-403                  | 3-3         |
+32-77                    | 2-2         |
+35299661-35411975        | 8-8         |
+7778-14058               | 4-5         |
+83706740-83939522        | 8-8         |
+
+This property makes the math-heavy approach both safe and efficient for all inputs in Part 1.
+
+For Part 2, the invalidity rules are more complex and do not lend themselves to a clean closed-form solution. In this case, an iteration approach may be more appropriate, with optimizations such as skipping ahead by powers of 10 when detecting repeated digit patterns (e.g., jumping by 10 instead of 1 when encountering 121212). While further edge-case handling is required, this approach may offer a reasonable balance between simplicity and performance.
 
 **Optimizations:**
-- BCD input format allows easy digit extraction without division
+- BCD input format allows easy digit extraction without division and modulo
 - 14-stage pipeline with tree adders for BCD-to-binary conversion
 - Arithmetic series formula avoids iterating through every number
 - Pipelined multipliers for the final reconstruction step
@@ -311,9 +361,9 @@ Stage 2: Detect splits (beams hitting ^) and compute next beam positions
 Stages 3-8: Tree reduction to sum all splits in the row (141 bits → 70 → 36 → 18 → 9 → 3 → 1)
 
 The beam propagation logic handles three cases per position:
-```
+`
 next_beams[i] = (current_beams[i-1] && splits[i-1]) || (current_beams[i+1] && splits[i+1]) || (current_beams[i] && !splits[i])
-```
+`
 **Optimizations:**
 - Tree adders for parallel summation across 141 positions
 - Single-cycle beam/timeline propagation using combinational logic
@@ -329,9 +379,9 @@ next_beams[i] = (current_beams[i-1] && splits[i-1]) || (current_beams[i+1] && sp
 **Part 2**: Instead of tracking single beams, I track the number of quantum timelines at each position. When a particle reaches a splitter, it takes both paths simultaneously, doubling the timeline count. The problem with this part is that the number will become very large so t hat the critical path is abit bigger than I expected. Although there are available ideas to optimize the critical path (but deeper pipelines of course), I did not do it because it not really a matter here and will make the program a bit cumbersome to read and the result now is quite good tho.
 
 The key difference from Part 1:
-```
+`
 next_paths[i] = (splits[i-1] ? current_paths[i-1] : 0) + (splits[i+1] ? current_paths[i+1] : 0) + (!splits[i] ? current_paths[i] : 0)
-```
+`
 **Optimizations:**
 - Tree adders for parallel summation across 141 positions
 - Single-cycle beam/timeline propagation using combinational logic
@@ -371,12 +421,12 @@ The pipeline has 6 stages (not counting input reception):
 - **Target Execution Time**: 2.96µs
 
 ### File Structure (per day)
-```
+`
 day_X/
 ├── input.txt                   # Raw problem input
 ├── *_part1.v                   # Part 1 Verilog implementation
 ├── *_part2.v                   # Part 2 Verilog implementation
 ├── test_day_X.py               # Cocotb test file (supporting print result)
 └── Makefile                    # Build configuration
-```
+`
 

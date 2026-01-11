@@ -309,9 +309,9 @@ module gift_shop_part1(
             if (stage3_valid) begin
                 stage4_half_len <= stage3_half_len;
                 stage4_t_fstart <= extract_decimal_stage1(stage3_high_nibbles_start, stage3_half_len);
-                stage4_t_fend   <= extract_decimal_stage1(stage3_high_nibbles_end, stage3_half_len);
+                stage4_t_fend <= extract_decimal_stage1(stage3_high_nibbles_end, stage3_half_len);
                 stage4_t_sstart <= extract_decimal_stage1(stage3_low_nibbles_start, stage3_half_len);
-                stage4_t_send   <= extract_decimal_stage1(stage3_low_nibbles_end, stage3_half_len);
+                stage4_t_send <= extract_decimal_stage1(stage3_low_nibbles_end, stage3_half_len);
             end
         end
     end
@@ -325,9 +325,9 @@ module gift_shop_part1(
             if (stage4_valid) begin
                 stage5_half_len <= stage4_half_len;
                 stage5_L1_fstart <= extract_decimal_stage2(stage4_t_fstart);
-                stage5_L1_fend   <= extract_decimal_stage2(stage4_t_fend);
+                stage5_L1_fend <= extract_decimal_stage2(stage4_t_fend);
                 stage5_L1_sstart <= extract_decimal_stage2(stage4_t_sstart);
-                stage5_L1_send   <= extract_decimal_stage2(stage4_t_send);
+                stage5_L1_send <= extract_decimal_stage2(stage4_t_send);
             end
         end
     end
@@ -341,9 +341,9 @@ module gift_shop_part1(
             if (stage5_valid) begin
                 stage6_half_len <= stage5_half_len;
                 stage6_f_start <= extract_decimal_stage3(stage5_L1_fstart);
-                stage6_f_end   <= extract_decimal_stage3(stage5_L1_fend);
+                stage6_f_end <= extract_decimal_stage3(stage5_L1_fend);
                 stage6_s_start <= extract_decimal_stage3(stage5_L1_sstart);
-                stage6_s_end   <= extract_decimal_stage3(stage5_L1_send);
+                stage6_s_end <= extract_decimal_stage3(stage5_L1_send);
             end
         end
     end

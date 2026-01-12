@@ -49,13 +49,13 @@ Because each day has 2 part, I set default is part 1. To run part 2 test, just s
 
 ### Folder Structure 
 *Note: I have solved most problems but some solutions should not be judged as they preloaded the whole input which is not suitable for realistic application. That is why I placed them in folder refs, although some of them actually quite good and optimized a lot. The solutions I write here are all in folder solutions*
-`
+```
 advent-of-fpga-2025
 ├── pictures                     # pictures for README 
 ├── refs                         # other solution not for judgement
 ├── solutions                    # 32-bit streaming solutions
 └── README.md                    
-`
+```
 
 ## Performance Metrics
 To evaluate each FPGA solution, the following metrics are reported:
@@ -421,12 +421,12 @@ The pipeline has 6 stages (not counting input reception):
 - **Target Execution Time**: 2.96µs
 
 ### File Structure (per day)
-`
+```
 day_X/
 ├── input.txt                   # Raw problem input
 ├── *_part1.v                   # Part 1 Verilog implementation
 ├── *_part2.v                   # Part 2 Verilog implementation
 ├── test_day_X.py               # Cocotb test file (supporting print result)
 └── Makefile                    # Build configuration
-`
+```
 

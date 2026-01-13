@@ -2,6 +2,8 @@
 
 A collection of Verilog solutions based on Advent of Code 2025 problems implemented for [Advent of FPGA](https://blog.janestreet.com/advent-of-fpga-challenge-2025/). My language and tools are Verilog, CocoTB, and Makefile. I target the KV260C board, which has a maximum achievable frequency of approximately 725MHz. Therefore, I analyze both the theoretical best-case execution time (using max frequency from timing analysis) and the realistic target execution time (constrained by board limitations).
 
+*Note: In these solutions, I focus primarily on algorithmic optimizations and timing aspects such as critical path reduction. There are many other opportunities for optimization - such as using pblocks, refining constraints, manual slice placement, and clock domain planning - but since the goal is to solve Advent of Code (AoC) problems, I do not explore these techniques in depth.*
+
 To explain, I chose CocoTB in this challenge simply because I used it before, I see that I need to process input at first, and I just need the final answer, I don't think anything better than CocoTB in this context.
 
 My goal for these solutions is to maximize clock frequency while minimizing redundant computation cycles. I implement mathematical approaches wherever possible to reduce unnecessary iterations or checks.
@@ -59,7 +61,7 @@ advent-of-fpga-2025
 
 ## Performance Metrics
 To evaluate each FPGA solution, the following metrics are reported:
-- **Worst Negative Slack**: Longest combinational delay in the design. Determines the maximum theoretical speed.
+- **Worst Negative Slack**: Worst negative slack after implimentation on Vivado.
 - **Target Frequency**: The frequency constrained in Vivado for the actual FPGA. Accounts for board and silicon limitations.
 - **Number of Cycles**: Total clock cycles to complete the computation for a single input. Shows pipeline depth and algorithm efficiency.
 - **Target Execution Time**: Execution time at Target Frequency (realistic board-limited speed):
